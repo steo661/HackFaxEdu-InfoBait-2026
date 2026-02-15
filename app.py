@@ -103,15 +103,37 @@ HTML_PAGE = """
         body::before{
             content:"";
             position:fixed;inset:0;z-index:-1;
-            background:linear-gradient(120deg,#06080a 0%,#071026 25%,#0b0f12 50%,#071026 75%,#05060a 100%);
-            background-size:200% 200%;filter:blur(18px) saturate(1.05);
-            animation:bgShift 18s linear infinite;
-            opacity:0.98;
+            background:
+                radial-gradient(ellipse 80% 50% at 20% 80%, rgba(124,92,255,0.15), transparent),
+                radial-gradient(ellipse 60% 40% at 80% 20%, rgba(59,130,246,0.12), transparent),
+                radial-gradient(ellipse 50% 60% at 50% 50%, rgba(139,92,246,0.08), transparent),
+                linear-gradient(140deg,#04060a 0%,#070d1e 20%,#0b0f1a 40%,#0a0e1d 60%,#070c18 80%,#04060a 100%);
+            background-size:200% 200%;
+            animation:bgShift 20s ease infinite;
+        }
+        body::after{
+            content:"";
+            position:fixed;inset:0;z-index:-1;
+            background:
+                radial-gradient(circle 320px at 15% 85%, rgba(124,92,255,0.1), transparent 70%),
+                radial-gradient(circle 280px at 85% 15%, rgba(59,100,246,0.08), transparent 70%);
+            animation:orbFloat 12s ease-in-out infinite alternate;
+            pointer-events:none;
         }
         :root.light body::before{
-            background:linear-gradient(120deg,#e8eef5 0%,#f0f4f8 25%,#f5f7fa 50%,#f0f4f8 75%,#e8eef5 100%);
+            background:
+                radial-gradient(ellipse 80% 50% at 20% 80%, rgba(124,92,255,0.06), transparent),
+                radial-gradient(ellipse 60% 40% at 80% 20%, rgba(59,130,246,0.05), transparent),
+                linear-gradient(140deg,#eef2f7 0%,#f0f4f8 25%,#f5f7fa 50%,#f0f4f8 75%,#eef2f7 100%);
+            background-size:200% 200%;
+        }
+        :root.light body::after{
+            background:
+                radial-gradient(circle 320px at 15% 85%, rgba(124,92,255,0.04), transparent 70%),
+                radial-gradient(circle 280px at 85% 15%, rgba(59,100,246,0.03), transparent 70%);
         }
         @keyframes bgShift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+        @keyframes orbFloat{0%{transform:translate(0,0) scale(1)}100%{transform:translate(30px,-20px) scale(1.08)}}
         .wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:36px}
 
         /* Animations */
@@ -223,7 +245,7 @@ HTML_PAGE = """
             <h1>InfoBait — Screenshot Analyzer</h1>
             <p class="lead">Upload a screenshot and get a concise analysis. We respect your privacy — files are processed locally or on your configured AI endpoint.</p>
 
-            <form action="/upload" method="post" enctype="multipart/form-data" onsubmit="handleSubmit(event)">
+            <form id="uploadForm" action="/upload" method="post" enctype="multipart/form-data" onsubmit="handleSubmit(event)">
                 <label class="file-input">
                     <input type="file" name="image" accept="image/*" onchange="handleFile(event)" required>
                     <span class="note" id="fname">Choose an image…</span>
@@ -264,30 +286,13 @@ HTML_PAGE = """
 
                 async function handleSubmit(e){
                     e.preventDefault();
-                    const form = e.target;
+                    const form = document.getElementById('uploadForm');
                     showLoader();
-                    const start = Date.now();
-                    try{
-                        const data = new FormData(form);
-                        const res = await fetch(form.action, { method: 'POST', body: data });
-                        const text = await res.text();
-                        const elapsed = Date.now() - start;
-                        const min = 3000; // ensure loader visible at least 3 seconds
-                        if(elapsed < min){
-                            await new Promise(r => setTimeout(r, min - elapsed));
-                        }
-                        // Replace current document with response HTML
-                        document.open();
-                        document.write(text);
-                        document.close();
-                    }catch(err){
-                        // On error, hide loader and re-enable button
-                        const l = document.getElementById('loader');
-                        if(l){ l.style.display = 'none'; }
-                        const btn = document.querySelector('.btn');
-                        if(btn){ btn.disabled = false; btn.textContent = btn.dataset.origText || 'Analyze'; }
-                        alert('Upload failed: ' + err);
-                    }
+                    // Small delay so loader is visible, then do a real form submit
+                    // (normal navigation preserves browser APIs like speechSynthesis)
+                    await new Promise(r => setTimeout(r, 800));
+                    form.removeAttribute('onsubmit');
+                    form.submit();
                     return false;
                 }
 
@@ -364,15 +369,37 @@ RESULT_PAGE = """
         body::before{
             content:"";
             position:fixed;inset:0;z-index:-1;
-            background:linear-gradient(120deg,#05060a 0%,#071026 30%,#0b0f12 60%,#071026 90%);
-            background-size:200% 200%;filter:blur(20px) saturate(1.05);
-            animation:bgShift 18s linear infinite;
-            opacity:0.98;
+            background:
+                radial-gradient(ellipse 80% 50% at 20% 80%, rgba(124,92,255,0.15), transparent),
+                radial-gradient(ellipse 60% 40% at 80% 20%, rgba(59,130,246,0.12), transparent),
+                radial-gradient(ellipse 50% 60% at 50% 50%, rgba(139,92,246,0.08), transparent),
+                linear-gradient(140deg,#04060a 0%,#070d1e 20%,#0b0f1a 40%,#0a0e1d 60%,#070c18 80%,#04060a 100%);
+            background-size:200% 200%;
+            animation:bgShift 20s ease infinite;
+        }
+        body::after{
+            content:"";
+            position:fixed;inset:0;z-index:-1;
+            background:
+                radial-gradient(circle 320px at 15% 85%, rgba(124,92,255,0.1), transparent 70%),
+                radial-gradient(circle 280px at 85% 15%, rgba(59,100,246,0.08), transparent 70%);
+            animation:orbFloat 12s ease-in-out infinite alternate;
+            pointer-events:none;
         }
         :root.light body::before{
-            background:linear-gradient(120deg,#e8eef5 0%,#f0f4f8 30%,#f5f7fa 60%,#f0f4f8 90%);
+            background:
+                radial-gradient(ellipse 80% 50% at 20% 80%, rgba(124,92,255,0.06), transparent),
+                radial-gradient(ellipse 60% 40% at 80% 20%, rgba(59,130,246,0.05), transparent),
+                linear-gradient(140deg,#eef2f7 0%,#f0f4f8 25%,#f5f7fa 50%,#f0f4f8 75%,#eef2f7 100%);
+            background-size:200% 200%;
+        }
+        :root.light body::after{
+            background:
+                radial-gradient(circle 320px at 15% 85%, rgba(124,92,255,0.04), transparent 70%),
+                radial-gradient(circle 280px at 85% 15%, rgba(59,100,246,0.03), transparent 70%);
         }
         @keyframes bgShift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+        @keyframes orbFloat{0%{transform:translate(0,0) scale(1)}100%{transform:translate(30px,-20px) scale(1.08)}}
         .wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:36px}
 
         /* Animations */
@@ -559,12 +586,29 @@ RESULT_PAGE = """
                 return;
             }
             window.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'en-US';
-            utterance.rate = 1;
-            utterance.pitch = 1;
-            utterance.volume = 1;
-            window.speechSynthesis.speak(utterance);
+
+            function doSpeak(){
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US';
+                utterance.rate = 1;
+                utterance.pitch = 1;
+                utterance.volume = 1;
+                // Pick first English voice if available
+                const voices = window.speechSynthesis.getVoices();
+                const enVoice = voices.find(v => v.lang && v.lang.startsWith('en'));
+                if(enVoice) utterance.voice = enVoice;
+                window.speechSynthesis.speak(utterance);
+            }
+
+            // Voices may load async — wait for them if needed
+            const voices = window.speechSynthesis.getVoices();
+            if(voices.length > 0){
+                doSpeak();
+            } else {
+                window.speechSynthesis.onvoiceschanged = function(){
+                    doSpeak();
+                };
+            }
         }
 
         function speakExtractedText(){
