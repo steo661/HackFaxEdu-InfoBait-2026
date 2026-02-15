@@ -2,12 +2,14 @@
 
 from flask import Flask, request, render_template_string
 import os
+from io import BytesIO
 from PIL import Image
 import pytesseract
 import cohere
 import base64
 import platform
 import re
+import socket
 
 app = Flask(__name__)
 
@@ -47,17 +49,41 @@ else:
     # leave default (requires tesseract on PATH) and warn
     print("Warning: tesseract binary not found at common locations; ensure tesseract is installed and on PATH")
 
-# ----------------------------
-# Upload folder
-# ----------------------------
-UPLOAD_FOLDER = "uploads"
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
 # Performance tunables
 # Maximum image dimension (pixels). Images larger than this will be downscaled before OCR.
 MAX_IMAGE_DIM = int(os.environ.get("MAX_IMAGE_DIM", "1200"))
 # Tesseract config for faster OCR (OEM 1 = LSTM engine, PSM 3 = Fully automatic page segmentation)
 TESSERACT_CONFIG = os.environ.get("TESSERACT_CONFIG", "--oem 1 --psm 3")
+
+# ----------------------------
+# Text Cleanup Function
+# ----------------------------
+def clean_text(raw_text: str) -> str:
+    """Use Cohere to spell-check and make OCR text coherent."""
+    if not raw_text or not raw_text.strip():
+        return raw_text
+    
+    try:
+        cleanup_prompt = (
+            "You are a text cleanup assistant. Given OCR-extracted text that may contain spelling errors, "
+            "missing spaces, or formatting issues, correct all spelling mistakes and make the text coherent and readable. "
+            "Preserve the original meaning and structure. Only fix errors - do not add, remove, or rephrase content unnecessarily. "
+            "Output ONLY the corrected text without any preamble or explanation.\\n\\n"
+            f"Text to clean:\\n{raw_text}"
+        )
+        
+        response = co.chat(
+            model=COHERE_MODEL,
+            message=cleanup_prompt,
+            max_tokens=500
+        )
+        
+        cleaned = response.text.strip()
+        return cleaned if cleaned else raw_text
+        
+    except Exception as e:
+        print(f"Text cleanup error: {e}")
+        return raw_text  # fallback to original text on error
 
 # ----------------------------
 # HTML page
@@ -71,6 +97,7 @@ HTML_PAGE = """
     <title>Upload — Peacebait</title>
     <style>
         :root{--bg:#0b0f12;--card:#0f1720;--muted:#9aa4ad;--accent:#7c5cff;--glass:rgba(255,255,255,0.03)}
+        :root.light{--bg:#f5f7fa;--card:#ffffff;--muted:#5a6c7d;--accent:#7c5cff;--glass:rgba(0,0,0,0.03)}
         html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;font-size:16px}
         /* animated gradient background */
         body::before{
@@ -81,6 +108,9 @@ HTML_PAGE = """
             animation:bgShift 18s linear infinite;
             opacity:0.98;
         }
+        :root.light body::before{
+            background:linear-gradient(120deg,#e8eef5 0%,#f0f4f8 25%,#f5f7fa 50%,#f0f4f8 75%,#e8eef5 100%);
+        }
         @keyframes bgShift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
         .wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:36px}
 
@@ -89,17 +119,36 @@ HTML_PAGE = """
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(124,92,255,0.35); } 70% { box-shadow: 0 0 0 10px rgba(124,92,255,0); } 100% { box-shadow: 0 0 0 0 rgba(124,92,255,0); } }
 
         .card{width:100%;max-width:820px;background:linear-gradient(180deg,var(--card),#0d1319);border-radius:14px;padding:32px;box-shadow:0 8px 36px rgba(2,6,23,0.6);color:#e6eef6;animation:fadeUp .42s ease-out both}
+        :root.light .card{background:linear-gradient(180deg,var(--card),#fafbfc);box-shadow:0 8px 36px rgba(0,0,0,0.08);color:#1a2332}
         h1{margin:0 0 12px;font-weight:600;font-size:22px}
         p.lead{margin:0 0 18px;color:var(--muted);font-size:14px}
         form{display:flex;gap:12px;align-items:center}
         .file-input{flex:1;display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--glass);border-radius:12px;border:1px solid rgba(255,255,255,0.04);transition:box-shadow .18s ease,transform .12s ease}
+        :root.light .file-input{border:1px solid rgba(0,0,0,0.08)}
         .file-input input[type=file]{background:transparent;color:inherit}
         .file-input:hover{box-shadow:0 6px 20px rgba(2,6,23,0.6);transform:translateY(-2px)}
-        .btn{background:var(--accent);border:none;color:white;padding:12px 16px;border-radius:12px;font-weight:600;cursor:pointer;transition:transform .12s ease,box-shadow .12s ease}
-        .btn:hover{transform:translateY(-3px);box-shadow:0 10px 30px rgba(124,92,255,0.12)}
-        .btn:active{transform:translateY(-1px)}
+        .btn{position:relative;background:linear-gradient(135deg,#8b6cff 0%,#6a4cdb 100%);border:none;color:white;padding:12px 20px;border-radius:12px;font-weight:600;cursor:pointer;transition:all .2s ease;box-shadow:0 4px 15px rgba(124,92,255,0.25),inset 0 1px 0 rgba(255,255,255,0.1);overflow:hidden}
+        .btn::before{content:"";position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent);transition:left .5s ease}
+        .btn:hover{transform:translateY(-3px);box-shadow:0 8px 25px rgba(124,92,255,0.35),0 0 20px rgba(124,92,255,0.2),inset 0 1px 0 rgba(255,255,255,0.15)}
+        .btn:hover::before{left:100%}
+        .btn:active{transform:translateY(-1px);box-shadow:0 4px 15px rgba(124,92,255,0.3)}
+        .settings-btn{position:fixed;top:24px;right:24px;width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,rgba(124,92,255,0.1),rgba(106,76,219,0.15));border:1px solid rgba(124,92,255,0.3);color:#b8a8ff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;transition:all .2s ease;z-index:100}
+        .settings-btn:hover{background:linear-gradient(135deg,rgba(124,92,255,0.18),rgba(106,76,219,0.25));border-color:rgba(124,92,255,0.5);transform:rotate(90deg) scale(1.05);box-shadow:0 4px 12px rgba(124,92,255,0.2)}
+        .settings-dropdown{position:fixed;top:76px;right:24px;width:320px;background:linear-gradient(180deg,#0f1720,#0d1319);border-radius:12px;border:1px solid rgba(255,255,255,0.06);box-shadow:0 12px 48px rgba(2,6,23,0.8);display:none;z-index:99;overflow:hidden;animation:fadeUp .3s ease-out}
+        .settings-dropdown.show{display:block}
+        .settings-section{border-bottom:1px solid rgba(255,255,255,0.03);padding:16px}
+        .settings-section:last-child{border-bottom:none}
+        .settings-section h3{margin:0 0 10px;font-size:13px;font-weight:600;color:#b8a8ff;text-transform:uppercase;letter-spacing:0.5px}
+        .settings-option{padding:8px 12px;margin:4px 0;background:rgba(255,255,255,0.02);border-radius:8px;border:1px solid rgba(255,255,255,0.03);color:#dce9f5;font-size:14px;cursor:pointer;transition:all .15s ease}
+        .settings-option:hover{background:rgba(124,92,255,0.1);border-color:rgba(124,92,255,0.3);transform:translateX(4px)}
+        .settings-option.active{background:linear-gradient(135deg,rgba(124,92,255,0.15),rgba(106,76,219,0.2));border-color:rgba(124,92,255,0.4);color:#b8a8ff}
+        .help-text{color:var(--muted);font-size:13px;line-height:1.6}
+        .tts-btn{padding:6px 12px;border-radius:8px;background:rgba(124,92,255,0.1);border:1px solid rgba(124,92,255,0.25);color:#b8a8ff;cursor:pointer;font-size:13px;font-weight:500;transition:all .2s ease;display:flex;align-items:center;gap:6px}
+        .tts-btn:hover{background:rgba(124,92,255,0.18);border-color:rgba(124,92,255,0.4);transform:translateY(-2px);box-shadow:0 4px 12px rgba(124,92,255,0.15)}
+        .tts-btn:active{transform:translateY(0);box-shadow:0 2px 6px rgba(124,92,255,0.1)}
         .meta{margin-top:18px;display:flex;gap:16px;align-items:center}
         .preview{width:160px;height:120px;border-radius:10px;overflow:hidden;background:#091216;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,0.03);transition:transform .18s ease,box-shadow .18s ease}
+        :root.light .preview{background:#f0f4f8;border:1px solid rgba(0,0,0,0.06)}
         .preview img{max-width:100%;max-height:100%;display:block;transition:transform .25s ease,filter .25s ease}
         .preview:hover{transform:translateY(-6px);box-shadow:0 18px 46px rgba(2,6,23,0.5)}
         .preview:hover img{transform:scale(1.04);filter:brightness(1.03)}
@@ -109,6 +158,18 @@ HTML_PAGE = """
     </style>
 </head>
 <body>
+    <button class="settings-btn" onclick="toggleSettings()">⚙️</button>
+    <div class="settings-dropdown" id="settingsDropdown">
+        <div class="settings-section">
+            <h3>Theme</h3>
+            <div class="settings-option active" onclick="setTheme('dark')" id="theme-dark">🌙 Dark Mode</div>
+            <div class="settings-option" onclick="setTheme('light')" id="theme-light">☀️ Light Mode</div>
+        </div>
+        <div class="settings-section">
+            <h3>Help</h3>
+            <div class="help-text">Upload screenshots to extract text via OCR and get AI-powered fact-checking. The truthfulness meter shows a 1-10 rating.</div>
+        </div>
+    </div>
     <div class="wrap">
         <div class="card">
             <h1>InfoBait — Screenshot Analyzer</h1>
@@ -181,6 +242,40 @@ HTML_PAGE = """
                     }
                     return false;
                 }
+
+        // Settings functionality
+        let currentTheme = localStorage.getItem('theme') || 'dark';
+
+        function toggleSettings(){
+            const dropdown = document.getElementById('settingsDropdown');
+            dropdown.classList.toggle('show');
+        }
+
+        function setTheme(theme){
+            currentTheme = theme;
+            localStorage.setItem('theme', theme);
+            document.documentElement.className = theme === 'light' ? 'light' : '';
+            document.querySelectorAll('[id^="theme-"]').forEach(el => el.classList.remove('active'));
+            document.getElementById('theme-' + theme).classList.add('active');
+        }
+
+        // Apply saved theme on load
+        if(currentTheme === 'light'){
+            document.documentElement.className = 'light';
+        }
+        
+        window.addEventListener('DOMContentLoaded', function(){
+            document.getElementById('theme-' + currentTheme).classList.add('active');
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e){
+            const dropdown = document.getElementById('settingsDropdown');
+            const btn = document.querySelector('.settings-btn');
+            if(dropdown && !dropdown.contains(e.target) && !btn.contains(e.target)){
+                dropdown.classList.remove('show');
+            }
+        });
     </script>
         <div id="loader" style="display:none;position:fixed;inset:0;background:rgba(3,6,10,0.6);backdrop-filter:blur(4px);align-items:center;justify-content:center;z-index:60">
             <div style="width:80%;max-width:560px;padding:18px;background:linear-gradient(180deg,#0b0f12,#0d1319);border-radius:12px;border:1px solid rgba(255,255,255,0.04);display:flex;flex-direction:column;gap:12px;align-items:center">
@@ -206,6 +301,7 @@ RESULT_PAGE = """
     <title>Results — Peacebait</title>
     <style>
         :root{--bg:#0b0f12;--card:#0f1720;--muted:#9aa4ad;--accent:#7c5cff;--glass:rgba(255,255,255,0.03)}
+        :root.light{--bg:#f5f7fa;--card:#ffffff;--muted:#5a6c7d;--accent:#7c5cff;--glass:rgba(0,0,0,0.03)}
         html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;font-size:16px}
         /* animated gradient background */
         body::before{
@@ -216,6 +312,9 @@ RESULT_PAGE = """
             animation:bgShift 18s linear infinite;
             opacity:0.98;
         }
+        :root.light body::before{
+            background:linear-gradient(120deg,#e8eef5 0%,#f0f4f8 30%,#f5f7fa 60%,#f0f4f8 90%);
+        }
         @keyframes bgShift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
         .wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:36px}
 
@@ -223,9 +322,11 @@ RESULT_PAGE = """
         @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         .card{width:100%;max-width:1100px;background:linear-gradient(180deg,var(--card),#0d1319);border-radius:14px;padding:28px;box-shadow:0 8px 36px rgba(2,6,23,0.6);color:#e6eef6;animation:fadeUp .42s ease-out both}
+        :root.light .card{background:linear-gradient(180deg,var(--card),#fafbfc);box-shadow:0 8px 36px rgba(0,0,0,0.08);color:#1a2332}
         .row{display:flex;gap:20px;align-items:flex-start}
         .left{width:320px}
         .preview{width:100%;border-radius:10px;overflow:hidden;background:#091216;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,0.03);padding:12px;transition:transform .18s ease,box-shadow .18s ease}
+        :root.light .preview{background:#f0f4f8;border:1px solid rgba(0,0,0,0.06)}
         .preview img{max-width:100%;height:auto;display:block;transition:transform .25s ease,filter .25s ease}
         .preview:hover{transform:translateY(-6px);box-shadow:0 18px 46px rgba(2,6,23,0.5)}
         .preview:hover img{transform:scale(1.03);filter:brightness(1.02)}
@@ -233,12 +334,40 @@ RESULT_PAGE = """
         h1{margin:0 0 8px;font-weight:600;font-size:20px}
         .note{color:var(--muted);font-size:14px;margin-bottom:10px}
         .panel{background:rgba(255,255,255,0.02);padding:14px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);color:#dce9f5;font-size:14px}
+        :root.light .panel{background:rgba(0,0,0,0.02);border:1px solid rgba(0,0,0,0.06);color:#2a3a4a}
         pre{white-space:pre-wrap;word-break:break-word;margin:0;font-family:inherit}
-        a.btn{display:inline-block;margin-top:14px;padding:8px 12px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted);text-decoration:none}
+        a.btn{position:relative;display:inline-block;margin-top:14px;padding:10px 18px;border-radius:10px;background:linear-gradient(135deg,rgba(124,92,255,0.08),rgba(106,76,219,0.12));border:1px solid rgba(124,92,255,0.25);color:#b8a8ff;text-decoration:none;font-weight:500;transition:all .2s ease;box-shadow:0 2px 8px rgba(0,0,0,0.15)}
+        a.btn::before{content:"\2190";margin-right:8px;opacity:0.7;transition:margin-right .2s ease}
+        a.btn:hover{transform:translateY(-2px);background:linear-gradient(135deg,rgba(124,92,255,0.15),rgba(106,76,219,0.2));border-color:rgba(124,92,255,0.4);box-shadow:0 4px 16px rgba(124,92,255,0.2);color:#d0c4ff}
+        a.btn:hover::before{margin-right:10px}
+        a.btn:active{transform:translateY(0px)}
+        .settings-btn{position:fixed;top:24px;right:24px;width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,rgba(124,92,255,0.1),rgba(106,76,219,0.15));border:1px solid rgba(124,92,255,0.3);color:#b8a8ff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;transition:all .2s ease;z-index:100}
+        .settings-btn:hover{background:linear-gradient(135deg,rgba(124,92,255,0.18),rgba(106,76,219,0.25));border-color:rgba(124,92,255,0.5);transform:rotate(90deg) scale(1.05);box-shadow:0 4px 12px rgba(124,92,255,0.2)}
+        .settings-dropdown{position:fixed;top:76px;right:24px;width:320px;background:linear-gradient(180deg,#0f1720,#0d1319);border-radius:12px;border:1px solid rgba(255,255,255,0.06);box-shadow:0 12px 48px rgba(2,6,23,0.8);display:none;z-index:99;overflow:hidden;animation:fadeUp .3s ease-out}
+        .settings-dropdown.show{display:block}
+        .settings-section{border-bottom:1px solid rgba(255,255,255,0.03);padding:16px}
+        .settings-section:last-child{border-bottom:none}
+        .settings-section h3{margin:0 0 10px;font-size:13px;font-weight:600;color:#b8a8ff;text-transform:uppercase;letter-spacing:0.5px}
+        .settings-option{padding:8px 12px;margin:4px 0;background:rgba(255,255,255,0.02);border-radius:8px;border:1px solid rgba(255,255,255,0.03);color:#dce9f5;font-size:14px;cursor:pointer;transition:all .15s ease}
+        .settings-option:hover{background:rgba(124,92,255,0.1);border-color:rgba(124,92,255,0.3);transform:translateX(4px)}
+        .settings-option.active{background:linear-gradient(135deg,rgba(124,92,255,0.15),rgba(106,76,219,0.2));border-color:rgba(124,92,255,0.4);color:#b8a8ff}
+        .help-text{color:var(--muted);font-size:13px;line-height:1.6}
         @media (max-width:820px){.row{flex-direction:column}.left{width:100%}}
     </style>
 </head>
 <body>
+    <button class="settings-btn" onclick="toggleSettings()">⚙️</button>
+    <div class="settings-dropdown" id="settingsDropdown">
+        <div class="settings-section">
+            <h3>Theme</h3>
+            <div class="settings-option active" onclick="setTheme('dark')" id="theme-dark">🌙 Dark Mode</div>
+            <div class="settings-option" onclick="setTheme('light')" id="theme-light">☀️ Light Mode</div>
+        </div>
+        <div class="settings-section">
+            <h3>Help</h3>
+            <div class="help-text">Upload screenshots to extract text via OCR and get AI-powered fact-checking. The truthfulness meter shows a 1-10 rating.</div>
+        </div>
+    </div>
     <div class="wrap">
         <div class="card">
             <h1>Analysis Result</h1>
@@ -251,13 +380,23 @@ RESULT_PAGE = """
                 </div>
                 <div class="right">
                     <div class="panel">
-                        <strong>Extracted Text</strong>
-                        <pre>{{ extracted_text }}</pre>
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                            <strong>Extracted Text</strong>
+                            <button onclick="speakExtractedText()" class="tts-btn" id="ttsExtractedBtn">
+                                <span id="ttsExtractedIcon">🔊</span> <span id="ttsExtractedText">Listen</span>
+                            </button>
+                        </div>
+                        <pre id="extractedTextContent">{{ extracted_text }}</pre>
                     </div>
                     <div style="height:12px"></div>
                     <div class="panel">
-                        <strong>AI Analysis</strong>
-                        <pre>{{ ai_output }}</pre>
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                            <strong>AI Analysis</strong>
+                            <button onclick="speakAnalysis()" class="tts-btn" id="ttsAnalysisBtn">
+                                <span id="ttsAnalysisIcon">🔊</span> <span id="ttsAnalysisText">Listen</span>
+                            </button>
+                        </div>
+                        <pre id="aiAnalysisText">{{ ai_output }}</pre>
                     </div>
                     <div style="height:12px"></div>
                     <div class="panel">
@@ -297,6 +436,78 @@ RESULT_PAGE = """
             </div>
         </div>
     </div>
+    <script>
+        let currentTheme = localStorage.getItem('theme') || 'dark';
+
+        function toggleSettings(){
+            const dropdown = document.getElementById('settingsDropdown');
+            dropdown.classList.toggle('show');
+        }
+
+        function setTheme(theme){
+            currentTheme = theme;
+            localStorage.setItem('theme', theme);
+            document.documentElement.className = theme === 'light' ? 'light' : '';
+            document.querySelectorAll('[id^="theme-"]').forEach(el => el.classList.remove('active'));
+            document.getElementById('theme-' + theme).classList.add('active');
+        }
+
+        // Apply saved theme on load
+        if(currentTheme === 'light'){
+            document.documentElement.className = 'light';
+        }
+        
+        // Prime voices list (helps Safari/macOS)
+        if (window.speechSynthesis) {
+            window.speechSynthesis.getVoices();
+        }
+        
+        window.addEventListener('DOMContentLoaded', function(){
+            document.getElementById('theme-' + currentTheme).classList.add('active');
+        });
+
+        document.addEventListener('click', function(e){
+            const dropdown = document.getElementById('settingsDropdown');
+            const btn = document.querySelector('.settings-btn');
+            if(dropdown && !dropdown.contains(e.target) && !btn.contains(e.target)){
+                dropdown.classList.remove('show');
+            }
+        });
+
+        function speakText(rawText){
+            if(!window.speechSynthesis || !window.SpeechSynthesisUtterance){
+                alert('Text-to-speech is not supported in this browser.');
+                return;
+            }
+            const text = (rawText || '').trim();
+            if(!text){
+                alert('No text to read');
+                return;
+            }
+
+            window.speechSynthesis.cancel();
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US';
+            utterance.rate = 1;
+            utterance.pitch = 1;
+            utterance.volume = 1;
+
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function speakExtractedText(){
+            const textEl = document.getElementById('extractedTextContent');
+            const text = textEl ? (textEl.textContent || textEl.innerText || '') : '';
+            speakText(text);
+        }
+
+        function speakAnalysis(){
+            const textEl = document.getElementById('aiAnalysisText');
+            const text = textEl ? (textEl.textContent || textEl.innerText || '') : '';
+            speakText(text);
+        }
+    </script>
 </body>
 </html>
 """
@@ -314,14 +525,15 @@ def upload():
     if file.filename == "":
         return "No file selected", 400
 
-    filepath = os.path.join(UPLOAD_FOLDER, file.filename)
-    file.save(filepath)
+    file_bytes = file.read()
+    if not file_bytes:
+        return "Uploaded file is empty", 400
 
     # ----------------------------
     # OCR Step (preprocess image for speed)
     # ----------------------------
-    def preprocess_image(path, max_dim=MAX_IMAGE_DIM):
-        img = Image.open(path)
+    def preprocess_image(image_bytes, max_dim=MAX_IMAGE_DIM):
+        img = Image.open(BytesIO(image_bytes))
         # Keep original color mode (do NOT convert to grayscale).
         # Convert palette images to RGB for compatibility, but otherwise keep color as-is.
         if img.mode == 'P':
@@ -330,8 +542,11 @@ def upload():
         img.thumbnail((max_dim, max_dim), Image.LANCZOS)
         return img
 
-    img = preprocess_image(filepath)
+    img = preprocess_image(file_bytes)
     extracted_text = pytesseract.image_to_string(img, config=TESSERACT_CONFIG)
+    
+    # Clean up OCR text (spell-check and make coherent)
+    extracted_text = clean_text(extracted_text)
 
     # ----------------------------
     # Cohere Chat API (latest)
@@ -341,9 +556,9 @@ def upload():
             "You are a fact-check assistant.\n"
             "Instructions:\n"
             "1) On the FIRST line, output exactly one token: either an integer 1-10 (the truthfulness rating) or the token 'N/A' if you cannot provide a rating. Do NOT include any other text on this line.\n"
-            "2) On the SECOND line, provide a single, short factual sentence (one line) explaining concisely why the claim is accurate or not.\n"
+            "2) Starting from the SECOND line, provide a clear, concise analysis explaining whether the claim is accurate or not. Focus only on factual accuracy.\n"
             "3) Do NOT mention grammatical errors, punctuation, spelling, or style — only assess factual accuracy.\n"
-            "4) Keep the explanation strictly factual and brief (one sentence).\n\n"
+            "4) Do NOT repeat the rating number in your explanation. Keep your analysis brief but informative (2-3 sentences).\n\n"
             f"Text to evaluate:\n{extracted_text}"
         )
 
@@ -379,6 +594,22 @@ def upload():
 
     rating = parse_rating(ai_output)
     rating_percent = (rating * 10) if rating is not None else 0
+    
+    # Extract only the explanation (skip the rating line)
+    ai_analysis_display = ai_output
+    if ai_output and '\n' in ai_output:
+        lines = ai_output.split('\n', 1)
+        if len(lines) > 1:
+            ai_analysis_display = lines[1].strip()
+    elif ai_output:
+        # If no newline, check if first word is just a rating
+        first_word = ai_output.strip().split()[0] if ai_output.strip() else ''
+        if first_word.upper() == 'N/A' or first_word.isdigit():
+            ai_analysis_display = ' '.join(ai_output.strip().split()[1:])
+    
+    # Fallback if extraction resulted in empty text
+    if not ai_analysis_display.strip():
+        ai_analysis_display = ai_output
     # Compute a color that moves from red -> yellow -> green based on rating_percent
     def compute_bar_color(percent: int):
         try:
@@ -404,14 +635,23 @@ def upload():
     bar_color = compute_bar_color(rating_percent) or 'linear-gradient(90deg,var(--accent),#5a3bff)'
     # embed uploaded image as base64 for preview in result page
     try:
-        with open(filepath, "rb") as f:
-            image_b64 = base64.b64encode(f.read()).decode("ascii")
+        image_b64 = base64.b64encode(file_bytes).decode("ascii")
     except Exception:
         image_b64 = ""
     mime = getattr(file, 'content_type', 'image/png') or 'image/png'
 
-    return render_template_string(RESULT_PAGE, extracted_text=extracted_text, ai_output=ai_output, image_b64=image_b64, mime=mime, filename=file.filename, rating=rating, rating_percent=rating_percent, bar_color=bar_color)
+    return render_template_string(RESULT_PAGE, extracted_text=extracted_text, ai_output=ai_analysis_display, image_b64=image_b64, mime=mime, filename=file.filename, rating=rating, rating_percent=rating_percent, bar_color=bar_color)
 
 if __name__ == "__main__":
-    # Run on port 5001 to avoid conflicts
-    app.run(host="0.0.0.0", port=5001, debug=True)
+    # Start on PORT (default 5002); if busy, pick the next available port.
+    base_port = int(os.environ.get("PORT", "5002"))
+    port = base_port
+    while True:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            if sock.connect_ex(("127.0.0.1", port)) != 0:
+                break
+            port += 1
+    if port != base_port:
+        print(f"Port {base_port} is busy. Using {port} instead.")
+    app.run(host="0.0.0.0", port=port, debug=True)
