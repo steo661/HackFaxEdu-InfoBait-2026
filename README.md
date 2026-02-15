@@ -1,6 +1,5 @@
 # HackFaxEdu
 HackFax/PatriotHacks Education Track, Misinformation AI Tracker
-Bibi Netanyahu
 
 User uploads a screenshot (social media post, reel caption, message, etc.).
 Backend receives the image file.
@@ -11,6 +10,5 @@ Verdict: Credible or Misleading
 1–2 sentence factual explanation
 
 Frontend displays:
-The extracted text (optional but nice)
-The verdict (color-coded)
+The extracted text
 The explanation
