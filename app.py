@@ -600,6 +600,15 @@ HTML_PAGE = """
             if(qEl) qEl.textContent = '\u201c'+q[0]+'\u201d';
             if(aEl) aEl.innerHTML = '&mdash; '+q[1];
         })();
+
+        // Secret code
+        (function(){
+            var seq=['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','a','b','Enter'];
+            var pos=0;
+            document.addEventListener('keydown',function(e){
+                if(e.key===seq[pos]){pos++;if(pos===seq.length){pos=0;window.location.href='/bibi';}}else{pos=0;}
+            });
+        })();
     </script>
         <div id="loader" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(3px);align-items:center;justify-content:center;z-index:60">
             <div style="width:80%;max-width:560px;padding:24px;background:#222220;border-radius:0;border:1px solid rgba(200,195,170,0.2);border-top:3px double #e8e4d8;display:flex;flex-direction:column;gap:12px;align-items:center;font-family:'Lora',Georgia,serif">
@@ -1077,6 +1086,166 @@ RESULT_PAGE = """
 @app.route("/")
 def home():
     return render_template_string(HTML_PAGE)
+
+BIBI_PAGE = """<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Talk to Bibi</title>
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Assistant:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{min-height:100vh;font-family:'Assistant','Segoe UI',sans-serif;background:linear-gradient(135deg,#0038b8 0%,#0038b8 40%,#fff 40%,#fff 60%,#0038b8 60%,#0038b8 100%);display:flex;flex-direction:column;align-items:center;justify-content:center}
+.chat-container{width:100%;max-width:640px;margin:24px auto;background:#fff;border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,0.3);overflow:hidden;display:flex;flex-direction:column;height:85vh}
+.chat-header{background:linear-gradient(135deg,#0038b8,#002d8f);padding:20px 24px;display:flex;align-items:center;gap:16px;border-bottom:4px solid #f4c430}
+.chat-avatar{width:56px;height:56px;border-radius:50%;background:#f4c430;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;border:3px solid #fff}
+.chat-header-text h1{font-family:'Frank Ruhl Libre',Georgia,serif;color:#fff;font-size:22px;font-weight:900;margin-bottom:2px}
+.chat-header-text p{color:rgba(255,255,255,0.7);font-size:13px}
+.star-of-david{position:absolute;right:20px;top:50%;transform:translateY(-50%);font-size:32px;color:rgba(255,255,255,0.15)}
+.chat-header{position:relative}
+.messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:12px;background:#f8f9fc}
+.msg{max-width:80%;padding:12px 16px;border-radius:12px;font-size:14px;line-height:1.6;animation:msgIn .3s ease-out}
+@keyframes msgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.msg.bot{background:linear-gradient(135deg,#e8ecf8,#dce3f5);color:#1a1a2e;align-self:flex-start;border-bottom-left-radius:4px;border:1px solid rgba(0,56,184,0.1)}
+.msg.user{background:linear-gradient(135deg,#0038b8,#0045d4);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+.msg.bot .sender{font-size:10px;font-weight:700;color:#0038b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+.msg.bot .sender::before{content:'\\2721 ';font-size:11px}
+.input-area{padding:16px 20px;background:#fff;border-top:2px solid #e8ecf5;display:flex;gap:10px;align-items:center}
+.input-area input{flex:1;padding:12px 16px;border:2px solid #dce3f5;border-radius:8px;font-size:14px;font-family:'Assistant',sans-serif;outline:none;transition:border .2s}
+.input-area input:focus{border-color:#0038b8}
+.input-area button{padding:12px 20px;background:linear-gradient(135deg,#0038b8,#0045d4);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Assistant',sans-serif;transition:all .2s;letter-spacing:0.5px}
+.input-area button:hover{background:linear-gradient(135deg,#002d8f,#0038b8);transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,56,184,0.3)}
+.input-area button:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.typing{display:flex;gap:4px;padding:8px 0}
+.typing span{width:6px;height:6px;background:#0038b8;border-radius:50%;animation:bounce .6s infinite alternate}
+.typing span:nth-child(2){animation-delay:.2s}
+.typing span:nth-child(3){animation-delay:.4s}
+@keyframes bounce{to{transform:translateY(-6px);opacity:.4}}
+.back-link{position:fixed;top:16px;left:16px;color:#fff;text-decoration:none;font-weight:700;font-size:14px;background:rgba(0,0,0,0.25);padding:8px 14px;border-radius:6px;backdrop-filter:blur(4px);transition:background .2s}
+.back-link:hover{background:rgba(0,0,0,0.4)}
+.welcome-flag{text-align:center;padding:8px;font-size:11px;color:#8a8fa8;letter-spacing:1px}
+</style>
+</head>
+<body>
+<a href="/" class="back-link">&larr; Back to InfoBait</a>
+<div class="chat-container">
+    <div class="chat-header">
+        <div class="chat-avatar">&#x1F1EE;&#x1F1F1;</div>
+        <div class="chat-header-text">
+            <h1>Talk to Bibi Netanyahu</h1>
+            <p>Prime Minister of Israel &bull; AI Simulation</p>
+        </div>
+        <div class="star-of-david">&#x2721;</div>
+    </div>
+    <div class="messages" id="messages">
+        <div class="welcome-flag">&#x1F1EE;&#x1F1F1; Shalom! This is an AI simulation for entertainment purposes only. &#x1F1EE;&#x1F1F1;</div>
+        <div class="msg bot"><div class="sender">Bibi Netanyahu</div>Shalom! I am Benjamin Netanyahu. Ask me anything about Israel, politics, security, or the Middle East. I am always happy to talk.</div>
+    </div>
+    <div class="input-area">
+        <input type="text" id="userInput" placeholder="Type your message..." autocomplete="off">
+        <button id="sendBtn" onclick="sendMessage()">Send</button>
+    </div>
+</div>
+<script>
+var chatHistory = [];
+var input = document.getElementById('userInput');
+var msgs = document.getElementById('messages');
+var btn = document.getElementById('sendBtn');
+
+input.addEventListener('keydown', function(e){ if(e.key==='Enter'&&!btn.disabled) sendMessage(); });
+
+function addMsg(text, cls, sender){
+    var d = document.createElement('div');
+    d.className = 'msg '+cls;
+    if(sender) d.innerHTML = '<div class="sender">'+sender+'</div>'+text;
+    else d.textContent = text;
+    msgs.appendChild(d);
+    msgs.scrollTop = msgs.scrollHeight;
+}
+
+function showTyping(){
+    var d = document.createElement('div');
+    d.className = 'msg bot';
+    d.id = 'typing';
+    d.innerHTML = '<div class="sender">Bibi Netanyahu</div><div class="typing"><span></span><span></span><span></span></div>';
+    msgs.appendChild(d);
+    msgs.scrollTop = msgs.scrollHeight;
+}
+
+function removeTyping(){
+    var t = document.getElementById('typing');
+    if(t) t.remove();
+}
+
+function sendMessage(){
+    var text = input.value.trim();
+    if(!text) return;
+    addMsg(text, 'user');
+    input.value = '';
+    btn.disabled = true;
+    chatHistory.push({role:'user', text:text});
+    showTyping();
+
+    fetch('/bibi-chat', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({message:text, history:chatHistory})
+    })
+    .then(function(r){return r.json()})
+    .then(function(data){
+        removeTyping();
+        addMsg(data.reply, 'bot', 'Bibi Netanyahu');
+        chatHistory.push({role:'bot', text:data.reply});
+        btn.disabled = false;
+        input.focus();
+    })
+    .catch(function(){
+        removeTyping();
+        addMsg('Connection error. Please try again.', 'bot', 'System');
+        btn.disabled = false;
+    });
+}
+</script>
+</body>
+</html>
+"""
+
+@app.route("/bibi")
+def bibi_page():
+    return render_template_string(BIBI_PAGE)
+
+@app.route("/bibi-chat", methods=["POST"])
+def bibi_chat():
+    data = request.get_json()
+    user_msg = data.get("message", "")
+    chat_history = data.get("history", [])
+
+    # Build conversation for Cohere
+    system_prompt = (
+        "You are roleplaying as Benjamin 'Bibi' Netanyahu, Prime Minister of Israel. "
+        "Stay in character at all times. Speak with confidence, authority, and occasional humor. "
+        "Reference your long political career, Israel's security, innovation, and strength. "
+        "Occasionally use Hebrew phrases like 'Shalom', 'Toda raba', 'Am Yisrael Chai'. "
+        "Keep responses conversational and 2-4 sentences. This is for entertainment only."
+    )
+
+    messages_for_api = system_prompt + "\\n\\nConversation so far:\\n"
+    for h in chat_history[-10:]:
+        role = "User" if h["role"] == "user" else "Bibi"
+        messages_for_api += f"{role}: {h['text']}\\n"
+    messages_for_api += f"User: {user_msg}\\nBibi:"
+
+    try:
+        response = co.chat(
+            model=COHERE_MODEL,
+            message=messages_for_api,
+            max_tokens=200,
+        )
+        reply = response.text.strip()
+    except Exception as e:
+        reply = "Shalom, my friend. I seem to be having technical difficulties. Even prime ministers have bad days! Please try again."
+
+    return {"reply": reply}
 
 @app.route("/upload", methods=["POST"])
 def upload():
