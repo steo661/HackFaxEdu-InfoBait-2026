@@ -125,7 +125,40 @@ HTML_PAGE = """
         form{display:flex;gap:12px;align-items:center}
         .file-input{flex:1;display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--glass);border-radius:12px;border:1px solid rgba(255,255,255,0.04);transition:box-shadow .18s ease,transform .12s ease}
         :root.light .file-input{border:1px solid rgba(0,0,0,0.08)}
-        .file-input input[type=file]{background:transparent;color:inherit}
+        .file-input input[type=file]{background:transparent;color:inherit;font-size:14px}
+        .file-input input[type=file]::file-selector-button{
+            margin-right:12px;
+            padding:8px 14px;
+            border-radius:10px;
+            border:1px solid rgba(124,92,255,0.45);
+            background:linear-gradient(135deg,#8b6cff 0%,#6a4cdb 100%);
+            color:#fff;
+            font-weight:600;
+            cursor:pointer;
+            transition:transform .15s ease,box-shadow .2s ease,filter .2s ease;
+            box-shadow:0 4px 15px rgba(124,92,255,0.25),inset 0 1px 0 rgba(255,255,255,0.1);
+        }
+        .file-input input[type=file]::file-selector-button:hover{
+            transform:translateY(-1px);
+            box-shadow:0 8px 25px rgba(124,92,255,0.35),0 0 20px rgba(124,92,255,0.2),inset 0 1px 0 rgba(255,255,255,0.15);
+            filter:brightness(1.03);
+        }
+        .file-input input[type=file]::file-selector-button:active{
+            transform:translateY(0);
+            box-shadow:0 4px 15px rgba(124,92,255,0.3);
+        }
+        .file-input input[type=file]::-webkit-file-upload-button{
+            margin-right:12px;
+            padding:8px 14px;
+            border-radius:10px;
+            border:1px solid rgba(124,92,255,0.45);
+            background:linear-gradient(135deg,#8b6cff 0%,#6a4cdb 100%);
+            color:#fff;
+            font-weight:600;
+            cursor:pointer;
+            transition:transform .15s ease,box-shadow .2s ease,filter .2s ease;
+            box-shadow:0 4px 15px rgba(124,92,255,0.25),inset 0 1px 0 rgba(255,255,255,0.1);
+        }
         .file-input:hover{box-shadow:0 6px 20px rgba(2,6,23,0.6);transform:translateY(-2px)}
         .btn{position:relative;background:linear-gradient(135deg,#8b6cff 0%,#6a4cdb 100%);border:none;color:white;padding:12px 20px;border-radius:12px;font-weight:600;cursor:pointer;transition:all .2s ease;box-shadow:0 4px 15px rgba(124,92,255,0.25),inset 0 1px 0 rgba(255,255,255,0.1);overflow:hidden}
         .btn::before{content:"";position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent);transition:left .5s ease}
@@ -139,9 +172,19 @@ HTML_PAGE = """
         .settings-section{border-bottom:1px solid rgba(255,255,255,0.03);padding:16px}
         .settings-section:last-child{border-bottom:none}
         .settings-section h3{margin:0 0 10px;font-size:13px;font-weight:600;color:#b8a8ff;text-transform:uppercase;letter-spacing:0.5px}
-        .settings-option{padding:8px 12px;margin:4px 0;background:rgba(255,255,255,0.02);border-radius:8px;border:1px solid rgba(255,255,255,0.03);color:#dce9f5;font-size:14px;cursor:pointer;transition:all .15s ease}
-        .settings-option:hover{background:rgba(124,92,255,0.1);border-color:rgba(124,92,255,0.3);transform:translateX(4px)}
-        .settings-option.active{background:linear-gradient(135deg,rgba(124,92,255,0.15),rgba(106,76,219,0.2));border-color:rgba(124,92,255,0.4);color:#b8a8ff}
+        .theme-toggle-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:4px 0}
+        .theme-toggle-label{color:#dce9f5;font-size:14px}
+        .theme-switch{position:relative;display:inline-block;width:64px;height:34px}
+        .theme-switch input{opacity:0;width:0;height:0}
+        .theme-slider{position:absolute;inset:0;cursor:pointer;background:linear-gradient(135deg,rgba(124,92,255,0.25),rgba(106,76,219,0.3));border:1px solid rgba(124,92,255,0.35);border-radius:999px;transition:all .2s ease;display:flex;align-items:center;justify-content:space-between;padding:0 9px;font-size:13px}
+        .theme-slider::before{content:"";position:absolute;height:26px;width:26px;left:3px;top:3px;background:#ffffff;border-radius:50%;box-shadow:0 3px 10px rgba(2,6,23,0.35);transition:transform .2s ease}
+        .theme-switch input:checked + .theme-slider::before{transform:translateX(30px)}
+        .theme-switch input:focus-visible + .theme-slider{outline:2px solid rgba(124,92,255,0.65);outline-offset:2px}
+        .theme-sun,.theme-moon{position:relative;z-index:1;opacity:0.9}
+        .theme-switch input:checked + .theme-slider .theme-sun{opacity:1}
+        .theme-switch input:checked + .theme-slider .theme-moon{opacity:0.55}
+        .theme-switch input:not(:checked) + .theme-slider .theme-moon{opacity:1}
+        .theme-switch input:not(:checked) + .theme-slider .theme-sun{opacity:0.55}
         .help-text{color:var(--muted);font-size:13px;line-height:1.6}
         .tts-btn{padding:6px 12px;border-radius:8px;background:rgba(124,92,255,0.1);border:1px solid rgba(124,92,255,0.25);color:#b8a8ff;cursor:pointer;font-size:13px;font-weight:500;transition:all .2s ease;display:flex;align-items:center;gap:6px}
         .tts-btn:hover{background:rgba(124,92,255,0.18);border-color:rgba(124,92,255,0.4);transform:translateY(-2px);box-shadow:0 4px 12px rgba(124,92,255,0.15)}
@@ -162,8 +205,13 @@ HTML_PAGE = """
     <div class="settings-dropdown" id="settingsDropdown">
         <div class="settings-section">
             <h3>Theme</h3>
-            <div class="settings-option active" onclick="setTheme('dark')" id="theme-dark">🌙 Dark Mode</div>
-            <div class="settings-option" onclick="setTheme('light')" id="theme-light">☀️ Light Mode</div>
+            <div class="theme-toggle-row">
+                <span class="theme-toggle-label">Light / Dark</span>
+                <label class="theme-switch" aria-label="Toggle light and dark mode">
+                    <input type="checkbox" id="themeToggle" onchange="toggleTheme(this.checked)">
+                    <span class="theme-slider"><span class="theme-moon">🌙</span><span class="theme-sun">☀️</span></span>
+                </label>
+            </div>
         </div>
         <div class="settings-section">
             <h3>Help</h3>
@@ -255,8 +303,14 @@ HTML_PAGE = """
             currentTheme = theme;
             localStorage.setItem('theme', theme);
             document.documentElement.className = theme === 'light' ? 'light' : '';
-            document.querySelectorAll('[id^="theme-"]').forEach(el => el.classList.remove('active'));
-            document.getElementById('theme-' + theme).classList.add('active');
+            const toggle = document.getElementById('themeToggle');
+            if(toggle){
+                toggle.checked = theme === 'light';
+            }
+        }
+
+        function toggleTheme(isLight){
+            setTheme(isLight ? 'light' : 'dark');
         }
 
         // Apply saved theme on load
@@ -265,7 +319,10 @@ HTML_PAGE = """
         }
         
         window.addEventListener('DOMContentLoaded', function(){
-            document.getElementById('theme-' + currentTheme).classList.add('active');
+            const toggle = document.getElementById('themeToggle');
+            if(toggle){
+                toggle.checked = currentTheme === 'light';
+            }
         });
 
         // Close dropdown when clicking outside
@@ -336,10 +393,8 @@ RESULT_PAGE = """
         .panel{background:rgba(255,255,255,0.02);padding:14px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);color:#dce9f5;font-size:14px}
         :root.light .panel{background:rgba(0,0,0,0.02);border:1px solid rgba(0,0,0,0.06);color:#2a3a4a}
         pre{white-space:pre-wrap;word-break:break-word;margin:0;font-family:inherit}
-        a.btn{position:relative;display:inline-block;margin-top:14px;padding:10px 18px;border-radius:10px;background:linear-gradient(135deg,rgba(124,92,255,0.08),rgba(106,76,219,0.12));border:1px solid rgba(124,92,255,0.25);color:#b8a8ff;text-decoration:none;font-weight:500;transition:all .2s ease;box-shadow:0 2px 8px rgba(0,0,0,0.15)}
-        a.btn::before{content:"\2190";margin-right:8px;opacity:0.7;transition:margin-right .2s ease}
+        a.btn{position:relative;display:inline-flex;align-items:center;justify-content:center;text-align:center;margin-top:14px;padding:10px 18px;border-radius:10px;background:linear-gradient(135deg,rgba(124,92,255,0.08),rgba(106,76,219,0.12));border:1px solid rgba(124,92,255,0.25);color:#b8a8ff;text-decoration:none;font-weight:500;transition:all .2s ease;box-shadow:0 2px 8px rgba(0,0,0,0.15)}
         a.btn:hover{transform:translateY(-2px);background:linear-gradient(135deg,rgba(124,92,255,0.15),rgba(106,76,219,0.2));border-color:rgba(124,92,255,0.4);box-shadow:0 4px 16px rgba(124,92,255,0.2);color:#d0c4ff}
-        a.btn:hover::before{margin-right:10px}
         a.btn:active{transform:translateY(0px)}
         .settings-btn{position:fixed;top:24px;right:24px;width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,rgba(124,92,255,0.1),rgba(106,76,219,0.15));border:1px solid rgba(124,92,255,0.3);color:#b8a8ff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;transition:all .2s ease;z-index:100}
         .settings-btn:hover{background:linear-gradient(135deg,rgba(124,92,255,0.18),rgba(106,76,219,0.25));border-color:rgba(124,92,255,0.5);transform:rotate(90deg) scale(1.05);box-shadow:0 4px 12px rgba(124,92,255,0.2)}
@@ -348,9 +403,19 @@ RESULT_PAGE = """
         .settings-section{border-bottom:1px solid rgba(255,255,255,0.03);padding:16px}
         .settings-section:last-child{border-bottom:none}
         .settings-section h3{margin:0 0 10px;font-size:13px;font-weight:600;color:#b8a8ff;text-transform:uppercase;letter-spacing:0.5px}
-        .settings-option{padding:8px 12px;margin:4px 0;background:rgba(255,255,255,0.02);border-radius:8px;border:1px solid rgba(255,255,255,0.03);color:#dce9f5;font-size:14px;cursor:pointer;transition:all .15s ease}
-        .settings-option:hover{background:rgba(124,92,255,0.1);border-color:rgba(124,92,255,0.3);transform:translateX(4px)}
-        .settings-option.active{background:linear-gradient(135deg,rgba(124,92,255,0.15),rgba(106,76,219,0.2));border-color:rgba(124,92,255,0.4);color:#b8a8ff}
+        .theme-toggle-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:4px 0}
+        .theme-toggle-label{color:#dce9f5;font-size:14px}
+        .theme-switch{position:relative;display:inline-block;width:64px;height:34px}
+        .theme-switch input{opacity:0;width:0;height:0}
+        .theme-slider{position:absolute;inset:0;cursor:pointer;background:linear-gradient(135deg,rgba(124,92,255,0.25),rgba(106,76,219,0.3));border:1px solid rgba(124,92,255,0.35);border-radius:999px;transition:all .2s ease;display:flex;align-items:center;justify-content:space-between;padding:0 9px;font-size:13px}
+        .theme-slider::before{content:"";position:absolute;height:26px;width:26px;left:3px;top:3px;background:#ffffff;border-radius:50%;box-shadow:0 3px 10px rgba(2,6,23,0.35);transition:transform .2s ease}
+        .theme-switch input:checked + .theme-slider::before{transform:translateX(30px)}
+        .theme-switch input:focus-visible + .theme-slider{outline:2px solid rgba(124,92,255,0.65);outline-offset:2px}
+        .theme-sun,.theme-moon{position:relative;z-index:1;opacity:0.9}
+        .theme-switch input:checked + .theme-slider .theme-sun{opacity:1}
+        .theme-switch input:checked + .theme-slider .theme-moon{opacity:0.55}
+        .theme-switch input:not(:checked) + .theme-slider .theme-moon{opacity:1}
+        .theme-switch input:not(:checked) + .theme-slider .theme-sun{opacity:0.55}
         .help-text{color:var(--muted);font-size:13px;line-height:1.6}
         @media (max-width:820px){.row{flex-direction:column}.left{width:100%}}
     </style>
@@ -360,8 +425,13 @@ RESULT_PAGE = """
     <div class="settings-dropdown" id="settingsDropdown">
         <div class="settings-section">
             <h3>Theme</h3>
-            <div class="settings-option active" onclick="setTheme('dark')" id="theme-dark">🌙 Dark Mode</div>
-            <div class="settings-option" onclick="setTheme('light')" id="theme-light">☀️ Light Mode</div>
+            <div class="theme-toggle-row">
+                <span class="theme-toggle-label">Light / Dark</span>
+                <label class="theme-switch" aria-label="Toggle light and dark mode">
+                    <input type="checkbox" id="themeToggle" onchange="toggleTheme(this.checked)">
+                    <span class="theme-slider"><span class="theme-moon">🌙</span><span class="theme-sun">☀️</span></span>
+                </label>
+            </div>
         </div>
         <div class="settings-section">
             <h3>Help</h3>
@@ -448,8 +518,14 @@ RESULT_PAGE = """
             currentTheme = theme;
             localStorage.setItem('theme', theme);
             document.documentElement.className = theme === 'light' ? 'light' : '';
-            document.querySelectorAll('[id^="theme-"]').forEach(el => el.classList.remove('active'));
-            document.getElementById('theme-' + theme).classList.add('active');
+            const toggle = document.getElementById('themeToggle');
+            if(toggle){
+                toggle.checked = theme === 'light';
+            }
+        }
+
+        function toggleTheme(isLight){
+            setTheme(isLight ? 'light' : 'dark');
         }
 
         // Apply saved theme on load
@@ -457,13 +533,11 @@ RESULT_PAGE = """
             document.documentElement.className = 'light';
         }
         
-        // Prime voices list (helps Safari/macOS)
-        if (window.speechSynthesis) {
-            window.speechSynthesis.getVoices();
-        }
-        
         window.addEventListener('DOMContentLoaded', function(){
-            document.getElementById('theme-' + currentTheme).classList.add('active');
+            const toggle = document.getElementById('themeToggle');
+            if(toggle){
+                toggle.checked = currentTheme === 'light';
+            }
         });
 
         document.addEventListener('click', function(e){
@@ -475,24 +549,21 @@ RESULT_PAGE = """
         });
 
         function speakText(rawText){
-            if(!window.speechSynthesis || !window.SpeechSynthesisUtterance){
-                alert('Text-to-speech is not supported in this browser.');
-                return;
-            }
             const text = (rawText || '').trim();
             if(!text){
                 alert('No text to read');
                 return;
             }
-
+            if(!window.speechSynthesis || !window.SpeechSynthesisUtterance){
+                alert('Text-to-speech is not supported in this browser.');
+                return;
+            }
             window.speechSynthesis.cancel();
-
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'en-US';
             utterance.rate = 1;
             utterance.pitch = 1;
             utterance.volume = 1;
-
             window.speechSynthesis.speak(utterance);
         }
 
