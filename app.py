@@ -104,7 +104,7 @@ HTML_PAGE = """
         body::before{
             content:"";
             position:fixed;inset:0;z-index:-1;
-            background:var(--bg);
+            background:var(--bg) repeating-linear-gradient(transparent,transparent 27px,rgba(200,195,170,0.12) 27px,rgba(200,195,170,0.12) 28px);
         }
         body::after{
             content:"";
@@ -113,16 +113,45 @@ HTML_PAGE = """
             pointer-events:none;
         }
         :root.light body::before{
-            background:var(--bg);
+            background:var(--bg) repeating-linear-gradient(transparent,transparent 27px,rgba(80,75,65,0.1) 27px,rgba(80,75,65,0.1) 28px);
         }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(196,30,30,0.25); } 70% { box-shadow: 0 0 0 10px rgba(196,30,30,0); } 100% { box-shadow: 0 0 0 0 rgba(196,30,30,0); } }
-        .wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:36px}
+        .wrap{min-height:100%;display:flex;align-items:flex-start;justify-content:center;padding:36px;gap:24px}
 
-        .card{width:100%;max-width:820px;background:var(--card);border-radius:0;padding:40px 36px 32px;box-shadow:0 1px 4px rgba(0,0,0,0.15);color:var(--ink);animation:fadeUp .42s ease-out both;border:1px solid var(--border);border-top:3px double var(--ink);border-bottom:3px double var(--ink)}
+        .card{width:100%;max-width:820px;flex:1 1 auto;background:var(--card);border-radius:0;padding:44px 40px 36px;box-shadow:0 4px 24px rgba(0,0,0,0.25),0 1px 4px rgba(0,0,0,0.15);color:var(--ink);animation:fadeUp .42s ease-out both;border:1px solid var(--border);border-top:4px double var(--ink);border-bottom:4px double var(--ink);position:relative;z-index:2;transition:transform .25s ease,box-shadow .25s ease}
+        .card:hover{transform:translateY(-3px);box-shadow:0 8px 32px rgba(0,0,0,0.32),0 2px 8px rgba(0,0,0,0.18)}
+
+        .sidebar{width:220px;flex-shrink:0;animation:fadeUp .5s ease-out both;animation-delay:.15s}
+        .sidebar-box{background:var(--card);border:1px solid var(--border);border-top:3px double var(--ink);padding:16px 14px;margin-bottom:16px;transition:transform .25s ease,box-shadow .25s ease}
+        .sidebar-box:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,0.2)}
+        .sidebar-box-heading{font-family:'Playfair Display',Georgia,serif;font-weight:900;font-size:11px;text-transform:uppercase;letter-spacing:3px;color:var(--accent);margin:0 0 10px;padding-bottom:8px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px}
+        .weather-icon{font-size:36px;line-height:1;text-align:center;margin:4px 0 8px}
+        .weather-temp{font-family:'Playfair Display',Georgia,serif;font-size:32px;font-weight:900;text-align:center;line-height:1;margin-bottom:2px}
+        .weather-desc{font-family:'Lora',Georgia,serif;font-size:12px;color:var(--muted);text-align:center;font-style:italic;margin-bottom:10px}
+        .weather-location{font-family:'Lora',Georgia,serif;font-size:10px;color:var(--muted);text-align:center;text-transform:uppercase;letter-spacing:2px;margin-bottom:12px}
+        .weather-details{border-top:1px solid var(--border);padding-top:10px}
+        .weather-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:11px;font-family:'Lora',Georgia,serif}
+        .weather-row-label{color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-size:9px;font-weight:600}
+        .weather-row-val{font-weight:700;color:var(--ink)}
+        .weather-loading{text-align:center;padding:16px 0;color:var(--muted);font-size:11px;font-style:italic;font-family:'Lora',Georgia,serif}
+        .weather-forecast{border-top:1px solid var(--border);padding-top:10px;margin-top:6px}
+        .forecast-day{display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:10px;font-family:'Lora',Georgia,serif}
+        .forecast-day-name{color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-size:9px;font-weight:600;width:32px}
+        .forecast-day-icon{font-size:14px;flex-shrink:0}
+        .forecast-day-temps{color:var(--ink);font-weight:600;font-size:10px}
+        .forecast-day-temps span{color:var(--muted);font-weight:400}
+        .sidebar-quote{font-family:'Lora',Georgia,serif;font-size:12px;font-style:italic;color:var(--muted);line-height:1.6;padding:4px 0}
+        .sidebar-quote-attr{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-top:6px;text-align:right;font-style:normal}
+        .right-sidebar{width:220px;flex-shrink:0;animation:fadeUp .5s ease-out both;animation-delay:.25s}
+        @media (max-width:1100px){.sidebar,.right-sidebar{display:none}}
+        .page-footer{background:#111;border-top:3px double rgba(255,255,255,0.2);padding:24px 28px;text-align:center;margin-top:auto}
+        :root.light .page-footer{background:#1a1a18;border-top:3px double rgba(255,255,255,0.15)}
+        .page-footer .footer-logo{font-family:'UnifrakturMaguntia','Playfair Display',Georgia,serif;font-size:28px;color:#fff;text-decoration:none;letter-spacing:2px;transition:opacity .25s}
+        .page-footer .footer-logo:hover{opacity:.7}
         :root.light .card{background:var(--card);box-shadow:0 1px 6px rgba(0,0,0,0.08);color:var(--ink)}
-        h1{margin:0 0 4px;font-weight:900;font-size:32px;font-family:'Playfair Display',Georgia,serif;text-transform:uppercase;letter-spacing:1px;line-height:1.1;border-bottom:2px solid var(--ink);padding-bottom:10px}
-        p.lead{margin:0 0 20px;color:var(--muted);font-size:14px;font-family:'Lora',Georgia,serif;line-height:1.7;font-style:italic;padding-top:8px}
+        h1{margin:0 0 4px;font-weight:900;font-size:32px;font-family:'Playfair Display',Georgia,serif;text-transform:uppercase;letter-spacing:1px;line-height:1.1;border-bottom:2px solid var(--ink);padding-bottom:10px;min-height:46px}
+        p.lead{margin:0 0 20px;color:var(--muted);font-size:14px;font-family:'Lora',Georgia,serif;line-height:1.7;font-style:italic;padding-top:8px;min-height:72px}
         .typewriter-cursor{display:inline-block;width:2px;height:1em;background:var(--accent);margin-left:2px;vertical-align:text-bottom;animation:blink .6s step-end infinite}
         :root.light .typewriter-cursor{background:var(--accent)}
         @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
@@ -308,6 +337,14 @@ HTML_PAGE = """
         </div>
     </div>
     <div class="wrap">
+        <div class="sidebar" id="leftSidebar">
+            <div class="sidebar-box">
+                <div class="sidebar-box-heading">&#9788; Weather</div>
+                <div id="weatherWidget">
+                    <div class="weather-loading">Fetching forecast&hellip;</div>
+                </div>
+            </div>
+        </div>
         <div class="card">
             <div class="edition-line">Digital Edition &mdash; Screenshot Intelligence Bureau</div>
             <hr class="thick-divider">
@@ -330,6 +367,13 @@ HTML_PAGE = """
             </div>
 
             <footer>"All the screenshots that are fit to analyze" &mdash; Est. 2025</footer>
+        </div>
+        <div class="right-sidebar">
+            <div class="sidebar-box">
+                <div class="sidebar-box-heading">&#10070; Quote of the Day</div>
+                <div class="sidebar-quote" id="dailyQuote">"The truth is rarely pure and never simple."</div>
+                <div class="sidebar-quote-attr" id="quoteAttr">&mdash; Oscar Wilde</div>
+            </div>
         </div>
     </div>
 
@@ -460,6 +504,102 @@ HTML_PAGE = """
                 });
             }
         });
+
+        // Weather widget
+        (function(){
+            const WMO_ICONS = {0:'☀',1:'🌤',2:'⛅',3:'☁',45:'🌫',48:'🌫',51:'🌦',53:'🌦',55:'🌧',56:'🌨',57:'🌨',61:'🌧',63:'🌧',65:'🌧',66:'🌨',67:'🌨',71:'🌨',73:'🌨',75:'❄',77:'❄',80:'🌦',81:'🌧',82:'🌧',85:'🌨',86:'🌨',95:'⛈',96:'⛈',99:'⛈'};
+            const WMO_DESC = {0:'Clear sky',1:'Mostly clear',2:'Partly cloudy',3:'Overcast',45:'Fog',48:'Rime fog',51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',56:'Freezing drizzle',57:'Freezing drizzle',61:'Light rain',63:'Rain',65:'Heavy rain',66:'Freezing rain',67:'Freezing rain',71:'Light snow',73:'Snow',75:'Heavy snow',77:'Snow grains',80:'Light showers',81:'Showers',82:'Heavy showers',85:'Snow showers',86:'Heavy snow showers',95:'Thunderstorm',96:'Thunderstorm w/ hail',99:'Severe thunderstorm'};
+            const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+            function renderWeather(data, city){
+                const w = document.getElementById('weatherWidget');
+                if(!w) return;
+                const cur = data.current;
+                const daily = data.daily;
+                const icon = WMO_ICONS[cur.weather_code] || '☀';
+                const desc = WMO_DESC[cur.weather_code] || 'Unknown';
+                let html = '<div class="weather-icon">'+icon+'</div>';
+                html += '<div class="weather-temp">'+Math.round(cur.temperature_2m)+'°</div>';
+                html += '<div class="weather-desc">'+desc+'</div>';
+                if(city) html += '<div class="weather-location">'+city+'</div>';
+                html += '<div class="weather-details">';
+                html += '<div class="weather-row"><span class="weather-row-label">Humidity</span><span class="weather-row-val">'+cur.relative_humidity_2m+'%</span></div>';
+                html += '<div class="weather-row"><span class="weather-row-label">Wind</span><span class="weather-row-val">'+Math.round(cur.wind_speed_10m)+' mph</span></div>';
+                html += '<div class="weather-row"><span class="weather-row-label">Feels like</span><span class="weather-row-val">'+Math.round(cur.apparent_temperature)+'°</span></div>';
+                html += '</div>';
+                // 5-day forecast
+                if(daily && daily.time){
+                    html += '<div class="weather-forecast">';
+                    for(var i=1;i<=5&&i<daily.time.length;i++){
+                        var d = new Date(daily.time[i]);
+                        var dn = DAYS[d.getDay()];
+                        var fi = WMO_ICONS[daily.weather_code[i]] || '☀';
+                        html += '<div class="forecast-day"><span class="forecast-day-name">'+dn+'</span><span class="forecast-day-icon">'+fi+'</span><span class="forecast-day-temps">'+Math.round(daily.temperature_2m_max[i])+'° <span>'+Math.round(daily.temperature_2m_min[i])+'°</span></span></div>';
+                    }
+                    html += '</div>';
+                }
+                w.innerHTML = html;
+            }
+
+            function fetchWeather(lat, lon, city){
+                var url = 'https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+'&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=6&temperature_unit=fahrenheit&wind_speed_unit=mph';
+                fetch(url).then(function(r){return r.json()}).then(function(data){
+                    renderWeather(data, city);
+                }).catch(function(){
+                    var w=document.getElementById('weatherWidget');
+                    if(w) w.innerHTML='<div class="weather-loading">Weather unavailable</div>';
+                });
+            }
+
+            function reverseGeocode(lat, lon, cb){
+                fetch('https://nominatim.openstreetmap.org/reverse?lat='+lat+'&lon='+lon+'&format=json')
+                .then(function(r){return r.json()}).then(function(d){
+                    var city = (d.address && (d.address.city||d.address.town||d.address.village||d.address.county)) || '';
+                    cb(city);
+                }).catch(function(){ cb(''); });
+            }
+
+            // IP-based geolocation (no permission needed)
+            fetch('https://ipapi.co/json/')
+            .then(function(r){return r.json()})
+            .then(function(geo){
+                if(geo && geo.latitude && geo.longitude){
+                    fetchWeather(geo.latitude, geo.longitude, geo.city || '');
+                } else {
+                    // Fallback: try browser geolocation
+                    if(navigator.geolocation){
+                        navigator.geolocation.getCurrentPosition(function(pos){
+                            var lat=pos.coords.latitude, lon=pos.coords.longitude;
+                            reverseGeocode(lat, lon, function(city){
+                                fetchWeather(lat, lon, city);
+                            });
+                        }, function(){ fetchWeather(51.51, -0.13, 'London'); }, {timeout:5000});
+                    } else { fetchWeather(51.51, -0.13, 'London'); }
+                }
+            })
+            .catch(function(){
+                fetchWeather(51.51, -0.13, 'London');
+            });
+        })();
+
+        // Daily quote rotation
+        (function(){
+            var quotes = [
+                ['The truth is rarely pure and never simple.','Oscar Wilde'],
+                ['Facts do not cease to exist because they are ignored.','Aldous Huxley'],
+                ['A lie can travel half way around the world while the truth is putting on its shoes.','Mark Twain'],
+                ['In a time of deceit, telling the truth is a revolutionary act.','George Orwell'],
+                ['The first duty of a newspaper is to be accurate.','C.P. Scott'],
+                ['Journalism is printing what someone else does not want printed. Everything else is public relations.','George Orwell'],
+                ['The pen is mightier than the sword.','Edward Bulwer-Lytton']
+            ];
+            var dayIndex = new Date().getDate() % quotes.length;
+            var q = quotes[dayIndex];
+            var qEl = document.getElementById('dailyQuote');
+            var aEl = document.getElementById('quoteAttr');
+            if(qEl) qEl.textContent = '\u201c'+q[0]+'\u201d';
+            if(aEl) aEl.innerHTML = '&mdash; '+q[1];
+        })();
     </script>
         <div id="loader" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(3px);align-items:center;justify-content:center;z-index:60">
             <div style="width:80%;max-width:560px;padding:24px;background:#222220;border-radius:0;border:1px solid rgba(200,195,170,0.2);border-top:3px double #e8e4d8;display:flex;flex-direction:column;gap:12px;align-items:center;font-family:'Lora',Georgia,serif">
@@ -472,6 +612,7 @@ HTML_PAGE = """
         <style>
             @keyframes loaderMove { from { left:-40% } to { left:140% } }
         </style>
+    <div class="page-footer"><a href="/" class="footer-logo">InfoBait</a></div>
 </body>
 </html>
 """
@@ -491,7 +632,7 @@ RESULT_PAGE = """
         body::before{
             content:"";
             position:fixed;inset:0;z-index:-1;
-            background:var(--bg);
+            background:var(--bg) repeating-linear-gradient(transparent,transparent 27px,rgba(200,195,170,0.12) 27px,rgba(200,195,170,0.12) 28px);
         }
         body::after{
             content:"";
@@ -500,7 +641,7 @@ RESULT_PAGE = """
             pointer-events:none;
         }
         :root.light body::before{
-            background:var(--bg);
+            background:var(--bg) repeating-linear-gradient(transparent,transparent 27px,rgba(80,75,65,0.1) 27px,rgba(80,75,65,0.1) 28px);
         }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:36px}
@@ -928,6 +1069,7 @@ RESULT_PAGE = """
             if(e.key === 'Escape') closeFAQ();
         });
     </script>
+    <div class="page-footer"><a href="/" class="footer-logo">InfoBait</a></div>
 </body>
 </html>
 """
