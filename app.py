@@ -10,6 +10,7 @@ import base64
 import platform
 import re
 import socket
+import json
 
 app = Flask(__name__)
 
@@ -172,8 +173,8 @@ HTML_PAGE = """
         .btn:hover{transform:translateY(-2px);background:#a01818;box-shadow:0 3px 10px rgba(196,30,30,0.25)}
         .btn:hover::before{left:100%}
         .btn:active{transform:translateY(0);box-shadow:none}
-        .settings-btn{width:44px;height:44px;border-radius:0;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#ccc;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;transition:all .2s ease}
-        .settings-btn:hover{background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.3);transform:rotate(90deg) scale(1.05)}
+        .settings-btn{width:44px;height:44px;border-radius:0;background:rgba(255,255,255,0.1);border:none;color:#ccc;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;transition:all .2s ease}
+        .settings-btn:hover{background:rgba(255,255,255,0.18);transform:rotate(90deg) scale(1.05)}
         .settings-dropdown{position:fixed;top:62px;right:24px;width:320px;background:var(--card);border-radius:0;border:1px solid var(--border);box-shadow:0 4px 20px rgba(0,0,0,0.3);display:none;z-index:99;overflow:hidden;animation:fadeUp .3s ease-out;font-family:'Lora',Georgia,serif}
         :root.light .settings-dropdown{background:#fffef8;box-shadow:0 4px 20px rgba(0,0,0,0.08)}
         .settings-dropdown.show{display:block}
@@ -524,8 +525,8 @@ RESULT_PAGE = """
         a.btn{position:relative;display:inline-flex;align-items:center;justify-content:center;text-align:center;margin-top:16px;padding:10px 20px;border-radius:0;background:var(--accent);border:none;color:#fff;text-decoration:none;font-weight:700;transition:all .2s ease;font-family:'Playfair Display',Georgia,serif;text-transform:uppercase;letter-spacing:2px;font-size:12px}
         a.btn:hover{transform:translateY(-2px);background:#a01818;box-shadow:0 3px 10px rgba(196,30,30,0.2)}
         a.btn:active{transform:translateY(0px)}
-        .settings-btn{width:44px;height:44px;border-radius:0;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#ccc;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;transition:all .2s ease}
-        .settings-btn:hover{background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.3);transform:rotate(90deg) scale(1.05)}
+        .settings-btn{width:44px;height:44px;border-radius:0;background:rgba(255,255,255,0.1);border:none;color:#ccc;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;transition:all .2s ease}
+        .settings-btn:hover{background:rgba(255,255,255,0.18);transform:rotate(90deg) scale(1.05)}
         .settings-dropdown{position:fixed;top:62px;right:24px;width:320px;background:var(--card);border-radius:0;border:1px solid var(--border);box-shadow:0 4px 20px rgba(0,0,0,0.3);display:none;z-index:99;overflow:hidden;animation:fadeUp .3s ease-out;font-family:'Lora',Georgia,serif}
         :root.light .settings-dropdown{background:#fffef8;box-shadow:0 4px 20px rgba(0,0,0,0.08)}
         .settings-dropdown.show{display:block}
@@ -599,6 +600,18 @@ RESULT_PAGE = """
         .edition-line{text-align:center;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:4px;font-family:'Lora',Georgia,serif;margin-bottom:12px}
         .divider{border:none;border-top:1px solid var(--border);margin:0}
         .thick-divider{border:none;border-top:3px double var(--ink);margin:8px 0}
+        .sources-section{margin-top:16px;padding:14px 0 0;border-top:1px solid var(--border)}
+        .sources-heading{font-family:'Playfair Display',Georgia,serif;text-transform:uppercase;letter-spacing:2px;font-size:11px;color:var(--accent);font-weight:700;margin:0 0 10px;display:flex;align-items:center;gap:8px}
+        .sources-heading::after{content:'';flex:1;height:1px;background:var(--border)}
+        .sources-list{list-style:none;margin:0;padding:0}
+        .sources-list li{padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;font-family:'Lora',Georgia,serif;line-height:1.5;display:flex;align-items:baseline;gap:6px}
+        .sources-list li:last-child{border-bottom:none}
+        .sources-list li::before{content:'§';color:var(--accent);font-weight:700;font-size:11px;flex-shrink:0}
+        .sources-list a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--border);transition:all .15s ease;word-break:break-all}
+        .sources-list a:hover{color:var(--accent);border-bottom-color:var(--accent)}
+        .sources-list .source-name{color:var(--ink);font-weight:600}
+        .sources-list .source-url{color:var(--muted);font-size:10px;display:block;margin-top:1px;font-style:italic;word-break:break-all}
+        .no-sources{color:var(--muted);font-size:12px;font-style:italic;font-family:'Lora',Georgia,serif}
     </style>
 </head>
 <body>
@@ -660,6 +673,10 @@ RESULT_PAGE = """
                 <div class="left">
                     <div class="preview">
                         <img src="data:{{ mime }};base64,{{ image_b64 }}" alt="uploaded image">
+                    </div>
+                    <div class="sources-section" id="sourcesSection">
+                        <div class="sources-heading">Sources</div>
+                        <ul class="sources-list" id="sourcesList"></ul>
                     </div>
                 </div>
                 <div class="right">
@@ -760,6 +777,47 @@ RESULT_PAGE = """
                 const d = new Date();
                 const opts = {weekday:'long',year:'numeric',month:'long',day:'numeric'};
                 dateEl.textContent = d.toLocaleDateString('en-US', opts);
+            }
+            // Render sources
+            try{
+                const sources = JSON.parse('{{ sources | safe }}');
+                const list = document.getElementById('sourcesList');
+                const section = document.getElementById('sourcesSection');
+                if(sources && sources.length > 0 && list){
+                    sources.forEach(function(s){
+                        const li = document.createElement('li');
+                        if(s.url && s.url.startsWith('http')){
+                            const a = document.createElement('a');
+                            a.href = s.url;
+                            a.target = '_blank';
+                            a.rel = 'noopener noreferrer';
+                            const nameSpan = document.createElement('span');
+                            nameSpan.className = 'source-name';
+                            nameSpan.textContent = s.name || s.url;
+                            a.appendChild(nameSpan);
+                            if(s.url && s.name){
+                                const urlSpan = document.createElement('span');
+                                urlSpan.className = 'source-url';
+                                urlSpan.textContent = s.url;
+                                a.appendChild(urlSpan);
+                            }
+                            li.appendChild(a);
+                        } else {
+                            const span = document.createElement('span');
+                            span.className = 'source-name';
+                            span.textContent = s.name;
+                            li.appendChild(span);
+                        }
+                        list.appendChild(li);
+                    });
+                } else if(section){
+                    list.innerHTML = '<li class="no-sources" style="padding:6px 0">No sources available for this analysis.</li>';
+                }
+            }catch(e){
+                const section = document.getElementById('sourcesSection');
+                if(section){
+                    document.getElementById('sourcesList').innerHTML = '<li class="no-sources" style="padding:6px 0">No sources available for this analysis.</li>';
+                }
             }
         });
 
@@ -920,7 +978,9 @@ def upload():
             "1) On the FIRST line, output exactly one token: either an integer 1-10 (the truthfulness rating) or the token 'N/A' if you cannot provide a rating. Do NOT include any other text on this line.\n"
             "2) Starting from the SECOND line, provide a clear, concise analysis explaining whether the claim is accurate or not. Focus only on factual accuracy.\n"
             "3) Do NOT mention grammatical errors, punctuation, spelling, or style — only assess factual accuracy.\n"
-            "4) Do NOT repeat the rating number in your explanation. Keep your analysis brief but informative (2-3 sentences).\n\n"
+            "4) Do NOT repeat the rating number in your explanation. Keep your analysis brief but informative (2-3 sentences).\n"
+            "5) After your analysis, output a blank line, then 'SOURCES:' on its own line, followed by 2-4 credible reference sources that support your fact-check. Each source on its own line in this format: '- Source Title | https://example.com/page'\n"
+            "   Only cite real, well-known sources (e.g., Reuters, AP News, BBC, Wikipedia, WHO, CDC, official .gov sites, major newspapers). Do NOT invent URLs.\n\n"
             f"Text to evaluate:\n{extracted_text}"
         )
 
@@ -928,7 +988,7 @@ def upload():
         response = co.chat(
             model=COHERE_MODEL,
             message=prompt_text,
-            max_tokens=150
+            max_tokens=350
         )
 
         ai_output = response.text.strip()
@@ -972,6 +1032,31 @@ def upload():
     # Fallback if extraction resulted in empty text
     if not ai_analysis_display.strip():
         ai_analysis_display = ai_output
+
+    # Parse sources from AI output (format: SOURCES:\n- Title | URL)
+    sources_list = []
+    if 'SOURCES:' in ai_analysis_display:
+        parts = ai_analysis_display.split('SOURCES:', 1)
+        ai_analysis_display = parts[0].strip()
+        sources_raw = parts[1].strip()
+        for line in sources_raw.split('\n'):
+            line = line.strip()
+            if line.startswith('- '):
+                line = line[2:].strip()
+            if not line or line.upper() == 'SOURCES:':
+                continue
+            if '|' in line:
+                name, url = line.split('|', 1)
+                name = name.strip()
+                url = url.strip()
+                if name:
+                    sources_list.append({'name': name, 'url': url})
+            elif line.startswith('http'):
+                sources_list.append({'name': line, 'url': line})
+            elif line:
+                sources_list.append({'name': line, 'url': ''})
+    sources_json = json.dumps(sources_list)
+
     # Compute a color that moves from red -> yellow -> green based on rating_percent
     def compute_bar_color(percent: int):
         try:
@@ -1002,7 +1087,7 @@ def upload():
         image_b64 = ""
     mime = getattr(file, 'content_type', 'image/png') or 'image/png'
 
-    return render_template_string(RESULT_PAGE, extracted_text=extracted_text, ai_output=ai_analysis_display, image_b64=image_b64, mime=mime, filename=file.filename, rating=rating, rating_percent=rating_percent, bar_color=bar_color)
+    return render_template_string(RESULT_PAGE, extracted_text=extracted_text, ai_output=ai_analysis_display, image_b64=image_b64, mime=mime, filename=file.filename, rating=rating, rating_percent=rating_percent, bar_color=bar_color, sources=sources_json)
 
 if __name__ == "__main__":
     # Start on PORT (default 5002); if busy, pick the next available port.
