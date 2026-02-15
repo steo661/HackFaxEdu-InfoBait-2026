@@ -325,8 +325,8 @@ HTML_PAGE = """
                 <div class="faq-a"><p>InfoBait supports all common image formats including PNG, JPG, JPEG, GIF, BMP, and WebP. For best OCR results, use high-resolution screenshots (800×600 or higher) with clear, readable text.</p></div>
             </div>
             <div class="faq-item">
-                <div class="faq-q" onclick="toggleFaq(this)"><span>How does the truthfulness rating work?</span><span class="faq-arrow">▼</span></div>
-                <div class="faq-a"><p>Our AI analyzes the extracted text and rates its factual accuracy on a scale of 1–10. A score of 1 means highly inaccurate, while 10 means highly truthful. The color bar shifts from red → yellow → green to reflect the rating visually.</p></div>
+                <div class="faq-q" onclick="toggleFaq(this)"><span>How does the accuracy rating work?</span><span class="faq-arrow">▼</span></div>
+                <div class="faq-a"><p>Our AI analyzes the extracted text and rates its factual accuracy on a scale of 1–10. A score of 1 means highly inaccurate, while 10 means highly accurate. The color bar shifts from red → yellow → green to reflect the rating visually.</p></div>
             </div>
             <div class="faq-item">
                 <div class="faq-q" onclick="toggleFaq(this)"><span>Is my uploaded data private and secure?</span><span class="faq-arrow">▼</span></div>
@@ -827,8 +827,8 @@ RESULT_PAGE = """
                 <div class="faq-a"><p>InfoBait supports all common image formats including PNG, JPG, JPEG, GIF, BMP, and WebP. For best OCR results, use high-resolution screenshots (800×600 or higher) with clear, readable text.</p></div>
             </div>
             <div class="faq-item">
-                <div class="faq-q" onclick="toggleFaq(this)"><span>How does the truthfulness rating work?</span><span class="faq-arrow">▼</span></div>
-                <div class="faq-a"><p>Our AI analyzes the extracted text and rates its factual accuracy on a scale of 1–10. A score of 1 means highly inaccurate, while 10 means highly truthful. The color bar shifts from red → yellow → green to reflect the rating visually.</p></div>
+                <div class="faq-q" onclick="toggleFaq(this)"><span>How does the accuracy rating work?</span><span class="faq-arrow">▼</span></div>
+                <div class="faq-a"><p>Our AI analyzes the extracted text and rates its factual accuracy on a scale of 1–10. A score of 1 means highly inaccurate, while 10 means highly accurate. The color bar shifts from red → yellow → green to reflect the rating visually.</p></div>
             </div>
             <div class="faq-item">
                 <div class="faq-q" onclick="toggleFaq(this)"><span>Is my uploaded data private and secure?</span><span class="faq-arrow">▼</span></div>
@@ -899,7 +899,7 @@ RESULT_PAGE = """
                     </div>
                     <div style="height:12px"></div>
                     <div class="panel">
-                        <strong>Truthfulness Rating</strong>
+                        <strong>Accuracy Rating</strong>
                         <div id="ratingContent" style="margin-top:8px">
                         {% if rating is not none %}
                             <div style="display:flex;align-items:center;gap:12px">
@@ -1252,51 +1252,81 @@ BIBI_PAGE = """<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Talk to Bibi</title>
+<title>Leader Chat</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Assistant:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{min-height:100vh;font-family:'Assistant','Segoe UI',sans-serif;background:linear-gradient(135deg,#0038b8 0%,#0038b8 40%,#fff 40%,#fff 60%,#0038b8 60%,#0038b8 100%);display:flex;flex-direction:column;align-items:center;justify-content:center}
+body{min-height:100vh;font-family:'Assistant','Segoe UI',sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:background .5s ease}
+body.bibi-mode{background:linear-gradient(135deg,#0038b8 0%,#0038b8 40%,#fff 40%,#fff 60%,#0038b8 60%,#0038b8 100%)}
+body.trump-mode{background:linear-gradient(135deg,#b22234 0%,#b22234 33%,#fff 33%,#fff 50%,#3c3b6e 50%,#3c3b6e 100%)}
 .chat-container{width:100%;max-width:640px;margin:24px auto;background:#fff;border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,0.3);overflow:hidden;display:flex;flex-direction:column;height:85vh}
-.chat-header{background:linear-gradient(135deg,#0038b8,#002d8f);padding:20px 24px;display:flex;align-items:center;gap:16px;border-bottom:4px solid #f4c430}
-.chat-avatar{width:56px;height:56px;border-radius:50%;background:#f4c430;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;border:3px solid #fff}
+.chat-header{padding:20px 24px;display:flex;align-items:center;gap:16px;position:relative;transition:background .4s ease,border-color .4s ease}
+.bibi-mode .chat-header{background:linear-gradient(135deg,#0038b8,#002d8f);border-bottom:4px solid #f4c430}
+.trump-mode .chat-header{background:linear-gradient(135deg,#b22234,#8b1a2b);border-bottom:4px solid #f4c430}
+.chat-avatar{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;border:3px solid #fff;transition:background .4s ease}
+.bibi-mode .chat-avatar{background:#f4c430}
+.trump-mode .chat-avatar{background:#f4c430}
 .chat-header-text h1{font-family:'Frank Ruhl Libre',Georgia,serif;color:#fff;font-size:22px;font-weight:900;margin-bottom:2px}
 .chat-header-text p{color:rgba(255,255,255,0.7);font-size:13px}
-.star-of-david{position:absolute;right:20px;top:50%;transform:translateY(-50%);font-size:32px;color:rgba(255,255,255,0.15)}
-.chat-header{position:relative}
+.header-symbol{position:absolute;right:20px;top:50%;transform:translateY(-50%);font-size:32px;color:rgba(255,255,255,0.15)}
 .messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:12px;background:#f8f9fc}
 .msg{max-width:80%;padding:12px 16px;border-radius:12px;font-size:14px;line-height:1.6;animation:msgIn .3s ease-out}
 @keyframes msgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-.msg.bot{background:linear-gradient(135deg,#e8ecf8,#dce3f5);color:#1a1a2e;align-self:flex-start;border-bottom-left-radius:4px;border:1px solid rgba(0,56,184,0.1)}
-.msg.user{background:linear-gradient(135deg,#0038b8,#0045d4);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
-.msg.bot .sender{font-size:10px;font-weight:700;color:#0038b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
-.msg.bot .sender::before{content:'\\2721 ';font-size:11px}
+.msg.bot{align-self:flex-start;border-bottom-left-radius:4px;transition:background .3s ease,border-color .3s ease}
+.bibi-mode .msg.bot{background:linear-gradient(135deg,#e8ecf8,#dce3f5);color:#1a1a2e;border:1px solid rgba(0,56,184,0.1)}
+.trump-mode .msg.bot{background:linear-gradient(135deg,#fce8e8,#f5dcdc);color:#1a1a2e;border:1px solid rgba(178,34,52,0.1)}
+.msg.user{align-self:flex-end;border-bottom-right-radius:4px;color:#fff;transition:background .3s ease}
+.bibi-mode .msg.user{background:linear-gradient(135deg,#0038b8,#0045d4)}
+.trump-mode .msg.user{background:linear-gradient(135deg,#b22234,#d42a3f)}
+.msg.bot .sender{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;transition:color .3s ease}
+.bibi-mode .msg.bot .sender{color:#0038b8}
+.trump-mode .msg.bot .sender{color:#b22234}
+.bibi-mode .msg.bot .sender::before{content:'\\2721 ';font-size:11px}
+.trump-mode .msg.bot .sender::before{content:'\\2605 ';font-size:11px}
 .input-area{padding:16px 20px;background:#fff;border-top:2px solid #e8ecf5;display:flex;gap:10px;align-items:center}
 .input-area input{flex:1;padding:12px 16px;border:2px solid #dce3f5;border-radius:8px;font-size:14px;font-family:'Assistant',sans-serif;outline:none;transition:border .2s}
-.input-area input:focus{border-color:#0038b8}
-.input-area button{padding:12px 20px;background:linear-gradient(135deg,#0038b8,#0045d4);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Assistant',sans-serif;transition:all .2s;letter-spacing:0.5px}
-.input-area button:hover{background:linear-gradient(135deg,#002d8f,#0038b8);transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,56,184,0.3)}
+.bibi-mode .input-area input:focus{border-color:#0038b8}
+.trump-mode .input-area input:focus{border-color:#b22234}
+.input-area button{padding:12px 20px;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Assistant',sans-serif;transition:all .3s;letter-spacing:0.5px}
+.bibi-mode .input-area button{background:linear-gradient(135deg,#0038b8,#0045d4)}
+.bibi-mode .input-area button:hover{background:linear-gradient(135deg,#002d8f,#0038b8);transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,56,184,0.3)}
+.trump-mode .input-area button{background:linear-gradient(135deg,#b22234,#d42a3f)}
+.trump-mode .input-area button:hover{background:linear-gradient(135deg,#8b1a2b,#b22234);transform:translateY(-1px);box-shadow:0 2px 8px rgba(178,34,52,0.3)}
 .input-area button:disabled{opacity:.5;cursor:not-allowed;transform:none}
 .typing{display:flex;gap:4px;padding:8px 0}
-.typing span{width:6px;height:6px;background:#0038b8;border-radius:50%;animation:bounce .6s infinite alternate}
+.typing span{width:6px;height:6px;border-radius:50%;animation:bounce .6s infinite alternate;transition:background .3s ease}
+.bibi-mode .typing span{background:#0038b8}
+.trump-mode .typing span{background:#b22234}
 .typing span:nth-child(2){animation-delay:.2s}
 .typing span:nth-child(3){animation-delay:.4s}
 @keyframes bounce{to{transform:translateY(-6px);opacity:.4}}
 .back-link{position:fixed;top:16px;left:16px;color:#fff;text-decoration:none;font-weight:700;font-size:14px;background:rgba(0,0,0,0.25);padding:8px 14px;border-radius:6px;backdrop-filter:blur(4px);transition:background .2s}
 .back-link:hover{background:rgba(0,0,0,0.4)}
 .welcome-flag{text-align:center;padding:8px;font-size:11px;color:#8a8fa8;letter-spacing:1px}
+.char-toggle{position:fixed;top:16px;right:16px;display:flex;align-items:center;gap:8px;background:rgba(0,0,0,0.35);padding:6px 14px;border-radius:8px;backdrop-filter:blur(4px);z-index:10}
+.char-toggle label{color:#fff;font-size:12px;font-weight:700;letter-spacing:0.5px;cursor:pointer;padding:6px 12px;border-radius:6px;transition:all .25s ease;border:2px solid transparent}
+.char-toggle label.active{background:rgba(255,255,255,0.2);border-color:rgba(255,255,255,0.4)}
+.char-toggle label:hover{background:rgba(255,255,255,0.1)}
 </style>
 </head>
-<body>
+<body class="bibi-mode">
 <a href="/" class="back-link">&larr; Back to InfoBait</a>
+<div class="char-toggle">
+    <label id="bibLabel" class="active" onclick="switchCharacter('bibi')">&#x1F1EE;&#x1F1F1; Bibi</label>
+    <label id="trumpLabel" onclick="switchCharacter('trump')">&#x1F1FA;&#x1F1F8; Trump</label>
+</div>
 <div class="chat-container">
-    <div class="chat-header">
-        <div class="chat-avatar">&#x1F1EE;&#x1F1F1;</div>
+    <div class="chat-header" id="chatHeader">
+        <div class="chat-avatar" id="chatAvatar">&#x1F1EE;&#x1F1F1;</div>
         <div class="chat-header-text">
+            <h1 id="chatTitle">BIBI Chat</h1>
+            <p id="chatSubtitle">Prime Minister of Israel &bull; AI Simulation</p>
         </div>
-        <div class="star-of-david">&#x2721;</div>
+        <div class="header-symbol" id="headerSymbol">&#x2721;</div>
     </div>
     <div class="messages" id="messages">
+        <div class="welcome-flag" id="welcomeFlag">&#x1F1EE;&#x1F1F1; Shalom! This is an AI simulation for entertainment purposes only. &#x1F1EE;&#x1F1F1;</div>
+        <div class="msg bot"><div class="sender">Bibi Netanyahu</div>Shalom! I am Benjamin Netanyahu. Ask me anything about Israel, politics, security, or the Middle East. I am always happy to talk.</div>
     </div>
     <div class="input-area">
         <input type="text" id="userInput" placeholder="Type your message..." autocomplete="off">
@@ -1308,6 +1338,48 @@ var chatHistory = [];
 var input = document.getElementById('userInput');
 var msgs = document.getElementById('messages');
 var btn = document.getElementById('sendBtn');
+var currentChar = 'bibi';
+
+var charConfig = {
+    bibi: {
+        name: 'Bibi Netanyahu',
+        title: 'BIBI Chat',
+        subtitle: 'Prime Minister of Israel \\u2022 AI Simulation',
+        avatar: '\\ud83c\\uddee\\ud83c\\uddf1',
+        symbol: '\\u2721',
+        welcome: '\\ud83c\\uddee\\ud83c\\uddf1 Shalom! This is an AI simulation for entertainment purposes only. \\ud83c\\uddee\\ud83c\\uddf1',
+        greeting: 'Shalom! I am Benjamin Netanyahu. Ask me anything about Israel, politics, security, or the Middle East. I am always happy to talk.',
+        bodyClass: 'bibi-mode'
+    },
+    trump: {
+        name: 'Donald Trump',
+        title: 'TRUMP Chat',
+        subtitle: 'President of the United States \\u2022 AI Simulation',
+        avatar: '\\ud83c\\uddfa\\ud83c\\uddf8',
+        symbol: '\\u2605',
+        welcome: '\\ud83c\\uddfa\\ud83c\\uddf8 Welcome! This is an AI simulation for entertainment purposes only. \\ud83c\\uddfa\\ud83c\\uddf8',
+        greeting: 'Hello, tremendous to meet you! I am Donald Trump, the greatest president ever. Ask me anything about America, deals, winning, or Making America Great Again. Believe me!',
+        bodyClass: 'trump-mode'
+    }
+};
+
+function switchCharacter(char){
+    if(char === currentChar) return;
+    currentChar = char;
+    var cfg = charConfig[char];
+    document.body.className = cfg.bodyClass;
+    document.getElementById('chatTitle').textContent = cfg.title;
+    document.getElementById('chatSubtitle').innerHTML = cfg.subtitle;
+    document.getElementById('chatAvatar').innerHTML = cfg.avatar;
+    document.getElementById('headerSymbol').innerHTML = cfg.symbol;
+    document.getElementById('bibLabel').className = char==='bibi'?'active':'';
+    document.getElementById('trumpLabel').className = char==='trump'?'active':'';
+    // Clear chat and reset
+    chatHistory = [];
+    msgs.innerHTML = '<div class="welcome-flag" id="welcomeFlag">'+cfg.welcome+'</div>' +
+        '<div class="msg bot"><div class="sender">'+cfg.name+'</div>'+cfg.greeting+'</div>';
+    document.title = cfg.title;
+}
 
 input.addEventListener('keydown', function(e){ if(e.key==='Enter'&&!btn.disabled) sendMessage(); });
 
@@ -1321,10 +1393,11 @@ function addMsg(text, cls, sender){
 }
 
 function showTyping(){
+    var cfg = charConfig[currentChar];
     var d = document.createElement('div');
     d.className = 'msg bot';
     d.id = 'typing';
-    d.innerHTML = '<div class="sender">Bibi</div><div class="typing"><span></span><span></span><span></span></div>';
+    d.innerHTML = '<div class="sender">'+cfg.name+'</div><div class="typing"><span></span><span></span><span></span></div>';
     msgs.appendChild(d);
     msgs.scrollTop = msgs.scrollHeight;
 }
@@ -1342,16 +1415,17 @@ function sendMessage(){
     btn.disabled = true;
     chatHistory.push({role:'user', text:text});
     showTyping();
+    var cfg = charConfig[currentChar];
 
     fetch('/bibi-chat', {
         method:'POST',
         headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({message:text, history:chatHistory})
+        body:JSON.stringify({message:text, history:chatHistory, character:currentChar})
     })
     .then(function(r){return r.json()})
     .then(function(data){
         removeTyping();
-        addMsg(data.reply, 'bot', 'Bibi');
+        addMsg(data.reply, 'bot', cfg.name);
         chatHistory.push({role:'bot', text:data.reply});
         btn.disabled = false;
         input.focus();
@@ -1376,19 +1450,36 @@ def bibi_chat():
     data = request.get_json()
     user_msg = data.get("message", "")
     chat_history = data.get("history", [])
+    character = data.get("character", "bibi")
 
-    # Build conversation for Cohere
-    system_prompt = (
-        "Stay on topic "
-        "Use facts"
-        "Respond with truth"
-    )
+    # Character-specific system prompts
+    if character == "trump":
+        system_prompt = (
+            "You are roleplaying as Donald J. Trump, President of the United States. "
+            "Stay in character at all times. Speak with supreme confidence, use superlatives constantly. "
+            "Say things are 'tremendous', 'the best', 'like nobody has ever seen before'. "
+            "Reference your deal-making skills, your presidency, Making America Great Again, and winning. "
+            "Occasionally say 'Believe me', 'Many people are saying', 'Everybody knows it'. "
+            "Keep responses conversational and 2-4 sentences. This is for entertainment only."
+        )
+        char_label = "Trump"
+        error_reply = "Look, we're having some technical difficulties, okay? Even the greatest president has a bad day. Tremendous. Try again, believe me!"
+    else:
+        system_prompt = (
+            "You are roleplaying as Benjamin 'Bibi' Netanyahu, Prime Minister of Israel. "
+            "Stay in character at all times. Speak with confidence, authority, and occasional humor. "
+            "Reference your long political career, Israel's security, innovation, and strength. "
+            "Occasionally use Hebrew phrases like 'Shalom', 'Toda raba', 'Am Yisrael Chai'. "
+            "Keep responses conversational and 2-4 sentences. This is for entertainment only."
+        )
+        char_label = "Bibi"
+        error_reply = "Shalom, my friend. I seem to be having technical difficulties. Even prime ministers have bad days! Please try again."
 
     messages_for_api = system_prompt + "\\n\\nConversation so far:\\n"
     for h in chat_history[-10:]:
-        role = "User" if h["role"] == "user" else "Bibi"
+        role = "User" if h["role"] == "user" else char_label
         messages_for_api += f"{role}: {h['text']}\\n"
-    messages_for_api += f"User: {user_msg}\\nBibi:"
+    messages_for_api += f"User: {user_msg}\\n{char_label}:"
 
     try:
         response = co.chat(
@@ -1398,7 +1489,7 @@ def bibi_chat():
         )
         reply = response.text.strip()
     except Exception as e:
-        reply = "Shalom, my friend. I seem to be having technical difficulties. Even prime ministers have bad days! Please try again."
+        reply = error_reply
 
     return {"reply": reply}
 
@@ -1455,15 +1546,19 @@ def reanalyze():
             return None
         try:
             rating_prompt = (
-                "You are a truthfulness scoring system. Read the following fact-check analysis and output "
-                "a single truthfulness score from 1 to 10 that matches the analysis conclusion.\n\n"
-                "SCORING RULES \u2014 match the analysis sentiment exactly:\n"
-                "- Analysis says the statement is TRUE, ACCURATE, CORRECT, VERIFIED, or CONFIRMED \u2192 score 9-10\n"
-                "- Analysis says the statement is MOSTLY ACCURATE or LARGELY TRUE with minor caveats \u2192 score 7-8\n"
-                "- Analysis says the statement is PARTIALLY TRUE, MIXED, or has significant nuance \u2192 score 5-6\n"
-                "- Analysis says the statement is MISLEADING, EXAGGERATED, LACKS CONTEXT, or MOSTLY INACCURATE \u2192 score 3-4\n"
-                "- Analysis says the statement is FALSE, FABRICATED, DEBUNKED, or COMPLETELY WRONG \u2192 score 1-2\n"
-                "- If the analysis cannot determine truthfulness or says INSUFFICIENT INFO \u2192 output N/A\n\n"
+                "You are a strict accuracy scoring system. Read the fact-check analysis below and output "
+                "a single accuracy score from 1 to 10.\n\n"
+                "CRITICAL RULES — you must follow these exactly:\n"
+                "1. Look for the conclusion keyword in the analysis (e.g. 'false', 'accurate', 'misleading', etc.)\n"
+                "2. If the analysis concludes the statement is FALSE, FABRICATED, DEBUNKED, INCORRECT, or COMPLETELY WRONG, "
+                "you MUST output 1 or 2. Never output higher than 2 for false statements.\n"
+                "3. If the analysis says MISLEADING, EXAGGERATED, LACKS CONTEXT, MOSTLY FALSE, or MOSTLY INACCURATE, output 3 or 4.\n"
+                "4. If the analysis says PARTIALLY TRUE, MIXED, or has significant caveats, output 5 or 6.\n"
+                "5. If the analysis says MOSTLY ACCURATE or LARGELY TRUE with only minor issues, output 7 or 8.\n"
+                "6. If the analysis says TRUE, ACCURATE, CORRECT, VERIFIED, or CONFIRMED with no caveats, output 9 or 10.\n"
+                "7. If the analysis cannot determine accuracy or says INSUFFICIENT INFO, output N/A.\n\n"
+                "IMPORTANT: A score of 9-10 should be RARE — only for clearly verified true statements. "
+                "When in doubt, score LOWER rather than higher.\n\n"
                 "Output ONLY the integer (1-10) or 'N/A'. Nothing else.\n\n"
                 f"Fact-check analysis:\n{analysis_text}"
             )
@@ -1473,7 +1568,16 @@ def reanalyze():
                 return None
             m = re.match(r'^([1-9]|10)\b', result)
             if m:
-                return max(1, min(10, int(m.group(1))))
+                score = int(m.group(1))
+                # Sanity check: if analysis text contains strong "false" keywords, cap the score
+                lower_analysis = analysis_text.lower()
+                false_keywords = ['false', 'fabricated', 'debunked', 'completely wrong', 'incorrect', 'not true', 'no evidence']
+                misleading_keywords = ['misleading', 'exaggerated', 'lacks context', 'mostly false', 'mostly inaccurate', 'unsubstantiated']
+                if any(kw in lower_analysis for kw in false_keywords) and score > 3:
+                    score = 2
+                elif any(kw in lower_analysis for kw in misleading_keywords) and score > 5:
+                    score = 4
+                return max(1, min(10, score))
             return None
         except Exception as e:
             print(f"Rating derivation error: {e}")
@@ -1505,7 +1609,6 @@ def reanalyze():
             elif line:
                 sources_list.append({'name': line, 'url': ''})
 
-    # Compute bar color
     def compute_bar_color(percent: int):
         try:
             p = int(percent)
@@ -1600,7 +1703,7 @@ def upload():
     ai_analysis_display = ai_output
 
     # ----------------------------
-    # Cohere Chat API — Step 2: Derive Truthfulness Rating from Analysis Sentiment
+    # Cohere Chat API — Step 2: Derive Accuracy Rating from Analysis Sentiment
     # ----------------------------
     # Strip sources from display text before sending to rating prompt
     analysis_for_rating = ai_analysis_display
@@ -1614,15 +1717,19 @@ def upload():
             return None
         try:
             rating_prompt = (
-                "You are a truthfulness scoring system. Read the following fact-check analysis and output "
-                "a single truthfulness score from 1 to 10 that matches the analysis conclusion.\n\n"
-                "SCORING RULES — match the analysis sentiment exactly:\n"
-                "- Analysis says the statement is TRUE, ACCURATE, CORRECT, VERIFIED, or CONFIRMED → score 9-10\n"
-                "- Analysis says the statement is MOSTLY ACCURATE or LARGELY TRUE with minor caveats → score 7-8\n"
-                "- Analysis says the statement is PARTIALLY TRUE, MIXED, or has significant nuance → score 5-6\n"
-                "- Analysis says the statement is MISLEADING, EXAGGERATED, LACKS CONTEXT, or MOSTLY INACCURATE → score 3-4\n"
-                "- Analysis says the statement is FALSE, FABRICATED, DEBUNKED, or COMPLETELY WRONG → score 1-2\n"
-                "- If the analysis cannot determine truthfulness or says INSUFFICIENT INFO → output N/A\n\n"
+                "You are a strict accuracy scoring system. Read the fact-check analysis below and output "
+                "a single accuracy score from 1 to 10.\n\n"
+                "CRITICAL RULES — you must follow these exactly:\n"
+                "1. Look for the conclusion keyword in the analysis (e.g. 'false', 'accurate', 'misleading', etc.)\n"
+                "2. If the analysis concludes the statement is FALSE, FABRICATED, DEBUNKED, INCORRECT, or COMPLETELY WRONG, "
+                "you MUST output 1 or 2. Never output higher than 2 for false statements.\n"
+                "3. If the analysis says MISLEADING, EXAGGERATED, LACKS CONTEXT, MOSTLY FALSE, or MOSTLY INACCURATE, output 3 or 4.\n"
+                "4. If the analysis says PARTIALLY TRUE, MIXED, or has significant caveats, output 5 or 6.\n"
+                "5. If the analysis says MOSTLY ACCURATE or LARGELY TRUE with only minor issues, output 7 or 8.\n"
+                "6. If the analysis says TRUE, ACCURATE, CORRECT, VERIFIED, or CONFIRMED with no caveats, output 9 or 10.\n"
+                "7. If the analysis cannot determine accuracy or says INSUFFICIENT INFO, output N/A.\n\n"
+                "IMPORTANT: A score of 9-10 should be RARE — only for clearly verified true statements. "
+                "When in doubt, score LOWER rather than higher.\n\n"
                 "Output ONLY the integer (1-10) or 'N/A'. Nothing else.\n\n"
                 f"Fact-check analysis:\n{analysis_text}"
             )
@@ -1636,7 +1743,16 @@ def upload():
                 return None
             m = re.match(r'^([1-9]|10)\b', result)
             if m:
-                return max(1, min(10, int(m.group(1))))
+                score = int(m.group(1))
+                # Sanity check: if analysis text contains strong "false" keywords, cap the score
+                lower_analysis = analysis_text.lower()
+                false_keywords = ['false', 'fabricated', 'debunked', 'completely wrong', 'incorrect', 'not true', 'no evidence']
+                misleading_keywords = ['misleading', 'exaggerated', 'lacks context', 'mostly false', 'mostly inaccurate', 'unsubstantiated']
+                if any(kw in lower_analysis for kw in false_keywords) and score > 3:
+                    score = 2
+                elif any(kw in lower_analysis for kw in misleading_keywords) and score > 5:
+                    score = 4
+                return max(1, min(10, score))
             return None
         except Exception as e:
             print(f"Rating derivation error: {e}")
@@ -1669,7 +1785,6 @@ def upload():
                 sources_list.append({'name': line, 'url': ''})
     sources_json = json.dumps(sources_list)
 
-    # Compute a color that moves from red -> yellow -> green based on rating_percent
     def compute_bar_color(percent: int):
         try:
             p = int(percent)
