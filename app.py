@@ -4,17 +4,30 @@ from flask import Flask, request, render_template_string
 import os
 from PIL import Image
 import pytesseract
-
-# Tell pytesseract where the Tesseract engine is
-pytesseract.pytesseract.tesseract_cmd = "/opt/homebrew/bin/tesseract"
+import cohere
 
 app = Flask(__name__)
 
-# Folder to store uploaded images
+# ----------------------------
+# Cohere setup
+# ----------------------------
+COHERE_API_KEY = "F2ahifI4wPh18RvXrbQnEd17WlL8avVAJfl3HQ2d"  # Replace with your key
+co = cohere.Client(COHERE_API_KEY)
+
+# ----------------------------
+# Tesseract setup (Mac)
+# ----------------------------
+pytesseract.pytesseract.tesseract_cmd = "/opt/homebrew/bin/tesseract"
+
+# ----------------------------
+# Upload folder
+# ----------------------------
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# HTML upload page
+# ----------------------------
+# HTML page
+# ----------------------------
 HTML_PAGE = """
 <!doctype html>
 <html>
@@ -42,21 +55,43 @@ def upload():
         return "No file uploaded", 400
 
     file = request.files["image"]
-
     if file.filename == "":
         return "No file selected", 400
 
-    # Save the uploaded file
     filepath = os.path.join(UPLOAD_FOLDER, file.filename)
     file.save(filepath)
 
-    # Extract text using OCR
+    # ----------------------------
+    # OCR Step
+    # ----------------------------
     extracted_text = pytesseract.image_to_string(Image.open(filepath))
+
+    # ----------------------------
+    # Cohere Chat API (latest)
+    # ----------------------------
+    try:
+        prompt_text = (
+            "You are a helpful assistant that only provides factual information. "
+            "Do NOT hallucinate or make up content. "
+            f"Analyze the following text and provide a concise summary or highlight key points:\n\n{extracted_text}"
+        )
+
+        response = co.chat(
+            model="command-r-08-2024",
+            message=prompt_text,
+            max_tokens=150
+        )
+
+        ai_output = response.text.strip()
+    except Exception as e:
+        ai_output = f"AI Error: {e}"
 
     return f"""
     <h3>Upload Successful!</h3>
     <p><strong>Extracted Text:</strong></p>
     <pre>{extracted_text}</pre>
+    <p><strong>AI Analysis:</strong></p>
+    <pre>{ai_output}</pre>
     <br>
     <a href="/">Upload another file</a>
     """
