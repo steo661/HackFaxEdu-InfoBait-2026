@@ -1280,25 +1280,28 @@ def upload():
     extracted_text = clean_text(extracted_text)
 
     # ----------------------------
-    # Cohere Chat API (latest)
+    # Cohere Chat API — Step 1: Get AI Analysis
     # ----------------------------
     try:
-        prompt_text = (
+        analysis_prompt = (
             "You are a fact-check assistant.\n"
+            "Analyze the following text for factual accuracy.\n"
             "Instructions:\n"
-            "1) On the FIRST line, output exactly one token: either an integer 1-10 (the truthfulness rating) or the token 'N/A' if you cannot provide a rating. Do NOT include any other text on this line.\n"
-            "2) Starting from the SECOND line, provide a clear, concise analysis explaining whether the claim is accurate or not. Focus only on factual accuracy.\n"
-            "3) Do NOT mention grammatical errors, punctuation, spelling, or style — only assess factual accuracy.\n"
-            "4) Do NOT repeat the rating number in your explanation. Keep your analysis brief but informative (2-3 sentences).\n"
-            "5) After your analysis, output a blank line, then 'SOURCES:' on its own line, followed by 2-4 credible reference sources that support your fact-check. Each source on its own line in this format: '- Source Title | https://example.com/page'\n"
-            "   Only cite real, well-known sources (e.g., Reuters, AP News, BBC, Wikipedia, WHO, CDC, official .gov sites, major newspapers). Do NOT invent URLs.\n\n"
+            "1) Provide a clear, concise analysis explaining whether the claim(s) are accurate, misleading, or false.\n"
+            "2) Focus only on factual accuracy — do NOT mention grammar, spelling, punctuation, or style.\n"
+            "3) Be explicit about your conclusion: clearly state whether the statement is 'accurate', 'mostly accurate', "
+            "'partially true', 'misleading', 'mostly false', or 'false'.\n"
+            "4) Keep your analysis brief but informative (2-4 sentences).\n"
+            "5) After your analysis, output a blank line, then 'SOURCES:' on its own line, followed by 2-4 credible reference sources "
+            "that support your fact-check. Each source on its own line in this format: '- Source Title | https://example.com/page'\n"
+            "   Only cite real, well-known sources (e.g., Reuters, AP News, BBC, Wikipedia, WHO, CDC, official .gov sites, major newspapers). "
+            "Do NOT invent URLs.\n\n"
             f"Text to evaluate:\n{extracted_text}"
         )
 
-        # Use configured model (env override allowed)
         response = co.chat(
             model=COHERE_MODEL,
-            message=prompt_text,
+            message=analysis_prompt,
             max_tokens=350
         )
 
@@ -1306,43 +1309,54 @@ def upload():
     except Exception as e:
         ai_output = f"AI Error: {e}"
 
-    # Try to extract a numeric rating (1-10) from the AI output
-    def parse_rating(text: str):
-        """Parse only a leading rating token at the start of the AI response.
-        Accepts an integer 1-10 or 'N/A'. Returns int 1-10 or None for N/A/invalid.
-        """
-        if not text:
-            return None
-        first_line = text.strip().splitlines()[0].strip()
-        if first_line.upper() == 'N/A':
-            return None
-        m = re.match(r'^(?:\s*)([1-9]|10)(?:\b)', first_line)
-        if m:
-            try:
-                v = int(m.group(1))
-                return max(1, min(10, v))
-            except Exception:
-                return None
-        return None
-
-    rating = parse_rating(ai_output)
-    rating_percent = (rating * 10) if rating is not None else 0
-    
-    # Extract only the explanation (skip the rating line)
+    # The full analysis is used as-is (no hidden rating line to strip)
     ai_analysis_display = ai_output
-    if ai_output and '\n' in ai_output:
-        lines = ai_output.split('\n', 1)
-        if len(lines) > 1:
-            ai_analysis_display = lines[1].strip()
-    elif ai_output:
-        # If no newline, check if first word is just a rating
-        first_word = ai_output.strip().split()[0] if ai_output.strip() else ''
-        if first_word.upper() == 'N/A' or first_word.isdigit():
-            ai_analysis_display = ' '.join(ai_output.strip().split()[1:])
-    
-    # Fallback if extraction resulted in empty text
-    if not ai_analysis_display.strip():
-        ai_analysis_display = ai_output
+
+    # ----------------------------
+    # Cohere Chat API — Step 2: Derive Truthfulness Rating from Analysis Sentiment
+    # ----------------------------
+    # Strip sources from display text before sending to rating prompt
+    analysis_for_rating = ai_analysis_display
+    if 'SOURCES:' in analysis_for_rating:
+        analysis_for_rating = analysis_for_rating.split('SOURCES:', 1)[0].strip()
+
+    def derive_rating_from_analysis(analysis_text: str):
+        """Send the AI analysis to a second Cohere call that scores it 1-10
+        based on the sentiment/conclusion of the analysis."""
+        if not analysis_text or analysis_text.startswith('AI Error:'):
+            return None
+        try:
+            rating_prompt = (
+                "You are a truthfulness scoring system. Read the following fact-check analysis and output "
+                "a single truthfulness score from 1 to 10 that matches the analysis conclusion.\n\n"
+                "SCORING RULES — match the analysis sentiment exactly:\n"
+                "- Analysis says the statement is TRUE, ACCURATE, CORRECT, VERIFIED, or CONFIRMED → score 9-10\n"
+                "- Analysis says the statement is MOSTLY ACCURATE or LARGELY TRUE with minor caveats → score 7-8\n"
+                "- Analysis says the statement is PARTIALLY TRUE, MIXED, or has significant nuance → score 5-6\n"
+                "- Analysis says the statement is MISLEADING, EXAGGERATED, LACKS CONTEXT, or MOSTLY INACCURATE → score 3-4\n"
+                "- Analysis says the statement is FALSE, FABRICATED, DEBUNKED, or COMPLETELY WRONG → score 1-2\n"
+                "- If the analysis cannot determine truthfulness or says INSUFFICIENT INFO → output N/A\n\n"
+                "Output ONLY the integer (1-10) or 'N/A'. Nothing else.\n\n"
+                f"Fact-check analysis:\n{analysis_text}"
+            )
+            resp = co.chat(
+                model=COHERE_MODEL,
+                message=rating_prompt,
+                max_tokens=10
+            )
+            result = resp.text.strip().splitlines()[0].strip()
+            if result.upper() == 'N/A':
+                return None
+            m = re.match(r'^([1-9]|10)\b', result)
+            if m:
+                return max(1, min(10, int(m.group(1))))
+            return None
+        except Exception as e:
+            print(f"Rating derivation error: {e}")
+            return None
+
+    rating = derive_rating_from_analysis(analysis_for_rating)
+    rating_percent = (rating * 10) if rating is not None else 0
 
     # Parse sources from AI output (format: SOURCES:\n- Title | URL)
     sources_list = []
