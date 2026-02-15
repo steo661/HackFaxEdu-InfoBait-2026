@@ -149,6 +149,12 @@ HTML_PAGE = """
         :root.light .page-footer{background:#1a1a18;border-top:3px double rgba(255,255,255,0.15)}
         .page-footer .footer-logo{font-family:'UnifrakturMaguntia','Playfair Display',Georgia,serif;font-size:28px;color:#fff;text-decoration:none;letter-spacing:2px;transition:opacity .25s}
         .page-footer .footer-logo:hover{opacity:.7}
+        .pen-line-wrap{position:relative;width:100%;max-width:320px;margin:12px auto 0;height:16px;overflow:visible}
+        .pen-line{position:absolute;top:50%;left:0;height:1px;background:rgba(255,255,255,0.25);width:0;animation:penDraw 2.5s ease-out 0.5s forwards}
+        :root.light .pen-line{background:rgba(255,255,255,0.2)}
+        .pen-icon{position:absolute;top:50%;transform:translate(-4px,-50%) rotate(-45deg);left:0;font-size:12px;opacity:0;animation:penMove 2.5s ease-out 0.5s forwards;color:rgba(255,255,255,0.5);filter:none}
+        @keyframes penDraw{0%{width:0}100%{width:100%}}
+        @keyframes penMove{0%{left:0;opacity:1}90%{opacity:1}100%{left:100%;opacity:0}}
         :root.light .card{background:var(--card);box-shadow:0 1px 6px rgba(0,0,0,0.08);color:var(--ink)}
         h1{margin:0 0 4px;font-weight:900;font-size:32px;font-family:'Playfair Display',Georgia,serif;text-transform:uppercase;letter-spacing:1px;line-height:1.1;border-bottom:2px solid var(--ink);padding-bottom:10px;min-height:46px}
         p.lead{margin:0 0 20px;color:var(--muted);font-size:14px;font-family:'Lora',Georgia,serif;line-height:1.7;font-style:italic;padding-top:8px;min-height:72px}
@@ -346,7 +352,7 @@ HTML_PAGE = """
             </div>
         </div>
         <div class="card">
-            <div class="edition-line">Digital Edition &mdash; Screenshot Intelligence Bureau</div>
+            <div class="edition-line">Screenshot Intelligence Bureau</div>
             <hr class="thick-divider">
             <h1 id="tw-title"></h1>
             <p class="lead" id="tw-lead"></p>
@@ -366,7 +372,7 @@ HTML_PAGE = """
                 </div>
             </div>
 
-            <footer>"All the screenshots that are fit to analyze" &mdash; Est. 2025</footer>
+            <footer>"Saved me from ragebait" &mdash; Est. 2026</footer>
         </div>
         <div class="right-sidebar">
             <div class="sidebar-box">
@@ -621,7 +627,13 @@ HTML_PAGE = """
         <style>
             @keyframes loaderMove { from { left:-40% } to { left:140% } }
         </style>
-    <div class="page-footer"><a href="/" class="footer-logo">InfoBait</a></div>
+    <div class="page-footer">
+        <a href="/" class="footer-logo">InfoBait</a>
+        <div class="pen-line-wrap">
+            <div class="pen-line"></div>
+            <div class="pen-icon">&#9998;</div>
+        </div>
+    </div>
 </body>
 </html>
 """
@@ -762,6 +774,25 @@ RESULT_PAGE = """
         .sources-list .source-name{color:var(--ink);font-weight:600}
         .sources-list .source-url{color:var(--muted);font-size:10px;display:block;margin-top:1px;font-style:italic;word-break:break-all}
         .no-sources{color:var(--muted);font-size:12px;font-style:italic;font-family:'Lora',Georgia,serif}
+        .edit-btn{padding:6px 14px;border-radius:0;background:transparent;border:2px solid var(--ink);color:var(--ink);cursor:pointer;font-size:10px;font-weight:700;transition:all .2s ease;display:inline-flex;align-items:center;gap:6px;font-family:'Playfair Display',Georgia,serif;text-transform:uppercase;letter-spacing:1px}
+        .edit-btn:hover{background:var(--ink);color:var(--bg);transform:translateY(-1px)}
+        .edit-btn:active{transform:translateY(0)}
+        .edit-btn.editing{background:var(--accent);border-color:var(--accent);color:#fff}
+        .edit-btn.editing:hover{background:#a01818;border-color:#a01818}
+        .reanalyze-btn{padding:6px 14px;border-radius:0;background:var(--accent);border:2px solid var(--accent);color:#fff;cursor:pointer;font-size:10px;font-weight:700;transition:all .2s ease;display:none;align-items:center;gap:6px;font-family:'Playfair Display',Georgia,serif;text-transform:uppercase;letter-spacing:1px}
+        .reanalyze-btn.show{display:inline-flex}
+        .reanalyze-btn:hover{background:#a01818;border-color:#a01818;transform:translateY(-1px)}
+        .reanalyze-btn:active{transform:translateY(0)}
+        .reanalyze-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+        .extracted-textarea{width:100%;min-height:120px;background:transparent;border:1px solid var(--border);color:var(--ink);font-family:'Lora',Georgia,serif;font-size:14px;line-height:1.7;padding:10px;resize:vertical;outline:none;transition:border-color .2s ease;display:none}
+        .extracted-textarea:focus{border-color:var(--accent)}
+        .extracted-textarea.show{display:block}
+        .edit-hint{color:var(--muted);font-size:11px;font-style:italic;font-family:'Lora',Georgia,serif;margin-top:6px;display:none}
+        .edit-hint.show{display:block}
+        .page-footer{background:#111;border-top:3px double rgba(255,255,255,0.2);padding:24px 28px;text-align:center;margin-top:auto}
+        :root.light .page-footer{background:#1a1a18;border-top:3px double rgba(255,255,255,0.15)}
+        .page-footer .footer-logo{font-family:'UnifrakturMaguntia','Playfair Display',Georgia,serif;font-size:28px;color:#fff;text-decoration:none;letter-spacing:2px;transition:opacity .25s}
+        .page-footer .footer-logo:hover{opacity:.7}
     </style>
 </head>
 <body>
@@ -831,15 +862,30 @@ RESULT_PAGE = """
                 </div>
                 <div class="right">
                     <div class="panel">
-                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px">
                             <strong>Extracted Text</strong>
-                            <button onclick="speakExtractedText()" class="tts-btn" id="ttsExtractedBtn">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-                                <span>Listen</span>
-                            </button>
+                            <div style="display:flex;gap:6px;align-items:center">
+                                <button onclick="toggleEdit()" class="edit-btn" id="editBtn">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                    <span id="editBtnText">Edit</span>
+                                </button>
+                                <button onclick="reanalyze()" class="reanalyze-btn" id="reanalyzeBtn" title="Re-run AI analysis with edited text">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                                    <span id="reanalyzeBtnText">Re-analyze</span>
+                                </button>
+                                <button onclick="speakExtractedText()" class="tts-btn" id="ttsExtractedBtn">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                                    <span>Listen</span>
+                                </button>
+                            </div>
                         </div>
                         <pre id="extractedTextContent">{{ extracted_text }}</pre>
+                        <textarea id="extractedTextEdit" class="extracted-textarea">{{ extracted_text }}</textarea>
+                        <div id="editHint" class="edit-hint">Edit the text above, then click <strong>Re-analyze</strong> to get an updated analysis.</div>
                     </div>
+                    <input type="hidden" id="hiddenImageB64" value="{{ image_b64 }}">
+                    <input type="hidden" id="hiddenMime" value="{{ mime }}">
+                    <input type="hidden" id="hiddenFilename" value="{{ filename }}">
                     <div style="height:12px"></div>
                     <div class="panel">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
@@ -854,7 +900,7 @@ RESULT_PAGE = """
                     <div style="height:12px"></div>
                     <div class="panel">
                         <strong>Truthfulness Rating</strong>
-                        <div style="margin-top:8px">
+                        <div id="ratingContent" style="margin-top:8px">
                         {% if rating is not none %}
                             <div style="display:flex;align-items:center;gap:12px">
                                 <div style="flex:1">
@@ -1077,6 +1123,121 @@ RESULT_PAGE = """
         document.addEventListener('keydown', function(e){
             if(e.key === 'Escape') closeFAQ();
         });
+
+        // Edit extracted text functionality
+        let isEditing = false;
+        function toggleEdit(){
+            isEditing = !isEditing;
+            const pre = document.getElementById('extractedTextContent');
+            const textarea = document.getElementById('extractedTextEdit');
+            const hint = document.getElementById('editHint');
+            const editBtn = document.getElementById('editBtn');
+            const editBtnText = document.getElementById('editBtnText');
+            const reanalyzeBtn = document.getElementById('reanalyzeBtn');
+            if(isEditing){
+                textarea.value = pre.textContent;
+                pre.style.display = 'none';
+                textarea.classList.add('show');
+                hint.classList.add('show');
+                editBtn.classList.add('editing');
+                editBtnText.textContent = 'Cancel';
+                reanalyzeBtn.classList.add('show');
+                textarea.focus();
+            } else {
+                pre.style.display = '';
+                textarea.classList.remove('show');
+                hint.classList.remove('show');
+                editBtn.classList.remove('editing');
+                editBtnText.textContent = 'Edit';
+                reanalyzeBtn.classList.remove('show');
+            }
+        }
+
+        async function reanalyze(){
+            const textarea = document.getElementById('extractedTextEdit');
+            const editedText = textarea.value.trim();
+            if(!editedText){ alert('Text cannot be empty.'); return; }
+            const reanalyzeBtn = document.getElementById('reanalyzeBtn');
+            const reanalyzeBtnText = document.getElementById('reanalyzeBtnText');
+            reanalyzeBtn.disabled = true;
+            reanalyzeBtnText.textContent = 'Analyzing\u2026';
+            try{
+                const resp = await fetch('/reanalyze', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        extracted_text: editedText,
+                        image_b64: document.getElementById('hiddenImageB64').value,
+                        mime: document.getElementById('hiddenMime').value,
+                        filename: document.getElementById('hiddenFilename').value
+                    })
+                });
+                const data = await resp.json();
+                // Update extracted text
+                const pre = document.getElementById('extractedTextContent');
+                pre.textContent = editedText;
+                // Update AI analysis
+                document.getElementById('aiAnalysisText').textContent = data.ai_output;
+                // Update rating bar using explicit ID
+                const ratingContent = document.getElementById('ratingContent');
+                if(data.rating !== null){
+                    const pct = data.rating * 10;
+                    ratingContent.innerHTML = ''+
+                        '<div style="display:flex;align-items:center;gap:12px">'+
+                            '<div style="flex:1">'+
+                                '<div style="position:relative;background:rgba(200,195,170,0.1);height:14px;border-radius:0;overflow:hidden;border:1px solid rgba(200,195,170,0.15)">'+
+                                    '<div style="position:absolute;inset:0;pointer-events:none;z-index:3;background-image:linear-gradient(to right,rgba(200,195,170,0.15) 1px, transparent 1px);background-size:10% 100%;background-repeat:repeat-x;opacity:0.9"></div>'+
+                                    '<div style="position:relative;z-index:2;height:100%;width:'+pct+'%;background:'+data.bar_color+';transition:width 420ms ease;border-radius:0"></div>'+
+                                '</div>'+
+                                '<div style="display:flex;justify-content:space-between;margin-top:6px;color:var(--muted);font-size:12px">'+
+                                    '<span>1</span><span>5</span><span>10</span>'+
+                                '</div>'+
+                            '</div>'+
+                            '<div style="min-width:84px;text-align:center">'+
+                                '<div style="font-weight:700;font-size:18px">'+data.rating+'</div>'+
+                                '<div style="color:var(--muted);font-size:12px">/ 10</div>'+
+                            '</div>'+
+                        '</div>';
+                } else {
+                    ratingContent.innerHTML = ''+
+                        '<div style="display:flex;align-items:center;gap:12px">'+
+                            '<div style="flex:1;display:flex;align-items:center;gap:12px">'+
+                                '<div style="min-width:84px;height:38px;border-radius:8px;background:rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--muted);font-size:16px">N/A</div>'+
+                                '<div style="color:var(--muted);font-size:14px">Unable to provide an accuracy report. Please try again.</div>'+
+                            '</div>'+
+                        '</div>';
+                }
+                // Update sources
+                const sourcesList = document.getElementById('sourcesList');
+                sourcesList.innerHTML = '';
+                if(data.sources && data.sources.length > 0){
+                    data.sources.forEach(function(s){
+                        const li = document.createElement('li');
+                        if(s.url && s.url.startsWith('http')){
+                            const a = document.createElement('a');
+                            a.href = s.url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+                            const nameSpan = document.createElement('span');
+                            nameSpan.className = 'source-name'; nameSpan.textContent = s.name || s.url;
+                            a.appendChild(nameSpan);
+                            if(s.url && s.name){ const urlSpan = document.createElement('span'); urlSpan.className = 'source-url'; urlSpan.textContent = s.url; a.appendChild(urlSpan); }
+                            li.appendChild(a);
+                        } else {
+                            const span = document.createElement('span'); span.className = 'source-name'; span.textContent = s.name; li.appendChild(span);
+                        }
+                        sourcesList.appendChild(li);
+                    });
+                } else {
+                    sourcesList.innerHTML = '<li class="no-sources" style="padding:6px 0">No sources available for this analysis.</li>';
+                }
+                // Exit edit mode
+                toggleEdit();
+            } catch(err){
+                alert('Re-analysis failed: ' + err.message);
+            } finally {
+                reanalyzeBtn.disabled = false;
+                reanalyzeBtnText.textContent = 'Re-analyze';
+            }
+        }
     </script>
     <div class="page-footer"><a href="/" class="footer-logo">InfoBait</a></div>
 </body>
@@ -1132,7 +1293,7 @@ body{min-height:100vh;font-family:'Assistant','Segoe UI',sans-serif;background:l
     <div class="chat-header">
         <div class="chat-avatar">&#x1F1EE;&#x1F1F1;</div>
         <div class="chat-header-text">
-            <h1>Talk to Bibi Netanyahu</h1>
+            <h1>BIBI Chat</h1>
             <p>Prime Minister of Israel &bull; AI Simulation</p>
         </div>
         <div class="star-of-david">&#x2721;</div>
@@ -1247,6 +1408,135 @@ def bibi_chat():
 
     return {"reply": reply}
 
+@app.route("/reanalyze", methods=["POST"])
+def reanalyze():
+    """Re-run AI analysis with user-edited extracted text."""
+    data = request.get_json()
+    if not data or 'extracted_text' not in data:
+        return {"error": "No text provided"}, 400
+
+    extracted_text = data['extracted_text'].strip()
+    image_b64 = data.get('image_b64', '')
+    mime = data.get('mime', 'image/png')
+    filename = data.get('filename', 'unknown')
+
+    if not extracted_text:
+        return {"error": "Text cannot be empty"}, 400
+
+    # Step 1: AI Analysis
+    try:
+        analysis_prompt = (
+            "You are a fact-check assistant.\n"
+            "Analyze the following text for factual accuracy.\n"
+            "Instructions:\n"
+            "1) Provide a clear, concise analysis explaining whether the claim(s) are accurate, misleading, or false.\n"
+            "2) Focus only on factual accuracy \u2014 do NOT mention grammar, spelling, punctuation, or style.\n"
+            "3) Be explicit about your conclusion: clearly state whether the statement is 'accurate', 'mostly accurate', "
+            "'partially true', 'misleading', 'mostly false', or 'false'.\n"
+            "4) Keep your analysis brief but informative (2-4 sentences).\n"
+            "5) Write in clear, coherent, and grammatically correct English. Use complete sentences with proper punctuation.\n"
+            "6) Do NOT use asterisks (*) anywhere in your response. No bold, no bullet markers with asterisks, no emphasis with asterisks.\n"
+            "7) After your analysis, output a blank line, then 'SOURCES:' on its own line, followed by 2-4 credible reference sources "
+            "that support your fact-check. Each source on its own line in this format: '- Source Title | https://example.com/page'\n"
+            "   Only cite real, well-known sources (e.g., Reuters, AP News, BBC, Wikipedia, WHO, CDC, official .gov sites, major newspapers). "
+            "Do NOT invent URLs.\n\n"
+            f"Text to evaluate:\n{extracted_text}"
+        )
+        response = co.chat(model=COHERE_MODEL, message=analysis_prompt, max_tokens=350)
+        ai_output = response.text.strip()
+    except Exception as e:
+        ai_output = f"AI Error: {e}"
+
+    # Strip any asterisks the AI might have included
+    ai_output = ai_output.replace('*', '')
+    ai_analysis_display = ai_output
+
+    # Step 2: Derive rating from analysis sentiment
+    analysis_for_rating = ai_analysis_display
+    if 'SOURCES:' in analysis_for_rating:
+        analysis_for_rating = analysis_for_rating.split('SOURCES:', 1)[0].strip()
+
+    def derive_rating_from_analysis(analysis_text: str):
+        if not analysis_text or analysis_text.startswith('AI Error:'):
+            return None
+        try:
+            rating_prompt = (
+                "You are a truthfulness scoring system. Read the following fact-check analysis and output "
+                "a single truthfulness score from 1 to 10 that matches the analysis conclusion.\n\n"
+                "SCORING RULES \u2014 match the analysis sentiment exactly:\n"
+                "- Analysis says the statement is TRUE, ACCURATE, CORRECT, VERIFIED, or CONFIRMED \u2192 score 9-10\n"
+                "- Analysis says the statement is MOSTLY ACCURATE or LARGELY TRUE with minor caveats \u2192 score 7-8\n"
+                "- Analysis says the statement is PARTIALLY TRUE, MIXED, or has significant nuance \u2192 score 5-6\n"
+                "- Analysis says the statement is MISLEADING, EXAGGERATED, LACKS CONTEXT, or MOSTLY INACCURATE \u2192 score 3-4\n"
+                "- Analysis says the statement is FALSE, FABRICATED, DEBUNKED, or COMPLETELY WRONG \u2192 score 1-2\n"
+                "- If the analysis cannot determine truthfulness or says INSUFFICIENT INFO \u2192 output N/A\n\n"
+                "Output ONLY the integer (1-10) or 'N/A'. Nothing else.\n\n"
+                f"Fact-check analysis:\n{analysis_text}"
+            )
+            resp = co.chat(model=COHERE_MODEL, message=rating_prompt, max_tokens=10)
+            result = resp.text.strip().splitlines()[0].strip()
+            if result.upper() == 'N/A':
+                return None
+            m = re.match(r'^([1-9]|10)\b', result)
+            if m:
+                return max(1, min(10, int(m.group(1))))
+            return None
+        except Exception as e:
+            print(f"Rating derivation error: {e}")
+            return None
+
+    rating = derive_rating_from_analysis(analysis_for_rating)
+    rating_percent = (rating * 10) if rating is not None else 0
+
+    # Parse sources
+    sources_list = []
+    if 'SOURCES:' in ai_analysis_display:
+        parts = ai_analysis_display.split('SOURCES:', 1)
+        ai_analysis_display = parts[0].strip()
+        sources_raw = parts[1].strip()
+        for line in sources_raw.split('\n'):
+            line = line.strip()
+            if line.startswith('- '):
+                line = line[2:].strip()
+            if not line or line.upper() == 'SOURCES:':
+                continue
+            if '|' in line:
+                name, url = line.split('|', 1)
+                name = name.strip()
+                url = url.strip()
+                if name:
+                    sources_list.append({'name': name, 'url': url})
+            elif line.startswith('http'):
+                sources_list.append({'name': line, 'url': line})
+            elif line:
+                sources_list.append({'name': line, 'url': ''})
+
+    # Compute bar color
+    def compute_bar_color(percent: int):
+        try:
+            p = int(percent)
+        except Exception:
+            return None
+        if p <= 0:
+            return None
+        if p <= 50:
+            ratio = p / 50.0
+            r, g, b = 255, round(255 * ratio), 0
+        else:
+            ratio = (p - 50) / 50.0
+            r, g, b = round(255 * (1 - ratio)), round(255 - 55 * ratio), 0
+        return f"#{r:02x}{g:02x}{b:02x}"
+
+    bar_color = compute_bar_color(rating_percent) or 'var(--accent)'
+
+    return {
+        'ai_output': ai_analysis_display,
+        'rating': rating,
+        'rating_percent': rating_percent,
+        'bar_color': bar_color,
+        'sources': sources_list
+    }
+
 @app.route("/upload", methods=["POST"])
 def upload():
     if "image" not in request.files:
@@ -1292,7 +1582,9 @@ def upload():
             "3) Be explicit about your conclusion: clearly state whether the statement is 'accurate', 'mostly accurate', "
             "'partially true', 'misleading', 'mostly false', or 'false'.\n"
             "4) Keep your analysis brief but informative (2-4 sentences).\n"
-            "5) After your analysis, output a blank line, then 'SOURCES:' on its own line, followed by 2-4 credible reference sources "
+            "5) Write in clear, coherent, and grammatically correct English. Use complete sentences with proper punctuation.\n"
+            "6) Do NOT use asterisks (*) anywhere in your response. No bold, no bullet markers with asterisks, no emphasis with asterisks.\n"
+            "7) After your analysis, output a blank line, then 'SOURCES:' on its own line, followed by 2-4 credible reference sources "
             "that support your fact-check. Each source on its own line in this format: '- Source Title | https://example.com/page'\n"
             "   Only cite real, well-known sources (e.g., Reuters, AP News, BBC, Wikipedia, WHO, CDC, official .gov sites, major newspapers). "
             "Do NOT invent URLs.\n\n"
@@ -1309,7 +1601,8 @@ def upload():
     except Exception as e:
         ai_output = f"AI Error: {e}"
 
-    # The full analysis is used as-is (no hidden rating line to strip)
+    # Strip any asterisks the AI might have included
+    ai_output = ai_output.replace('*', '')
     ai_analysis_display = ai_output
 
     # ----------------------------
